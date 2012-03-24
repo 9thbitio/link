@@ -1,12 +1,12 @@
 from pandas import DataFrame
-from vlinks import Linker
+from link import Linker
 
-class ConnectionWrapper(object):
+class ConnectionWrapper(Wrapper):
     """
     wraps a database connection and extends the functionality
     to do tasks like put queries into dataframes
     """
-    def __init__(self, db_type=None, user=None, password=None,
+    def __init__(self, wrap_name = None, db_type=None, user=None, password=None,
                  host=None, path=None):
         self.db_type = db_type
         self.user = user
@@ -14,6 +14,7 @@ class ConnectionWrapper(object):
         self.host = host
         self.path = path
         self._connection = None
+        super(ConnectionWrapper, self).__init__(wrap_name)
 
     def __getattr__(self, name):
         """

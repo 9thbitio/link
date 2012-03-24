@@ -7,7 +7,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 import json
 from xml.etree import cElementTree as ET
-from vlinks import Linker, Wrapper
+from link import Linker, Wrapper
 
 class ResponseWrapper(Wrapper):
     """
@@ -75,13 +75,14 @@ class RequestWrapper(Wrapper):
             self.auth = HTTPBasicAuth(user, password)
 
         self.headers = requests.defaults.defaults['base_headers']
+        super(RequestWrapper, self).__init__(wrap_name)
 
     def request_decorator(func):
         """
         Send a request by the name.  Nice helper function to getattr
         """
-        def request_function(self, url_params,  **kwargs):
-            return self.request(func.__name__, url_params=url_params,  **kwargs)
+        def request_function(self, **kwargs):
+            return self.request(func.__name__, **kwargs)
 
         return request_function
 

@@ -1,4 +1,5 @@
 import os
+import sys
 from utils import json_load_file
 from debuglink import DebugLink
 
@@ -9,16 +10,17 @@ class Mock(object):
     @debug.listen
     def debug_listen(self, function_name, *kargs, **kwargs):
         """
-        Lets you listen any wrapper or linker to see what the args are to the function.
-        Differs from debug_inspect because it does not do the function call and will not
-        give you back the results of the call
+        Lets you listen any wrapper or linker to see what the args are to the
+        function.  Differs from debug_inspect because it does not do the 
+        function call and will not give you back the results of the call
         """
         return self.__getattribute__(function_name)(*kargs, **kwargs)
 
     @debug.inspect
     def debug_inspect(self, function_name, *kargs, **kwargs):
         """
-        Lets you listen any wrapper or linker.  Gives you the inputs and results of the function
+        Lets you listen any wrapper or linker.  Gives you the inputs and 
+        results of the function
         """
         return self.__getattribute__(function_name)(*kargs, **kwargs)
 
@@ -38,7 +40,7 @@ class Wrapper(Mock):
         try:
             return self.__getattribute__(name)
         except Exception as e:
-            if self._wrapped:
+            if self._wrapped is not None:
                 return self._wrapped.__getattribute__(name)
             raise e
 
@@ -69,8 +71,8 @@ class Link(Mock):
         """
         Gives you the global config based on the hierchial lookup::
 
-            first check ~/.vlink.config
-            then check ./.vlink.config
+            first check ~/link.config
+            then check ./link.config
 
         """
         #if there is a user global then use that instead of the framework global
@@ -177,12 +179,12 @@ class Linker(Mock):
         """
         pass
 
-    def __call__(self, wrap_name = None):
+    def __call__(self, wrap_name = None, *kargs, **kwargs):
         """
         Make it so you can call Linker(wrap) and have that return a link for the
         configured wrap
         """
-        return self.links(wrap_name)
+        return self.links(wrap_name, *kargs, **kwargs)
 
 
 class MockLink(Linker):
@@ -191,3 +193,26 @@ class MockLink(Linker):
         super(MockLink, self).__init__('', MockWrapper)
 
 
+def install_ipython_completers():  # pragma: no cover
+    """Register the Panel type with IPython's tab completion machinery, so
+    that it knows about accessing column names as attributes."""
+    from IPython.utils.generics import complete_object
+    import inspect
+
+    @complete_object.when_type(Wrapper)
+    def complete_wrapper(obj, prev_completions):
+        """
+        Add in all the methods of the _wrapped object so its
+        visible in iPython as well
+        """
+        obj_members = inspect.getmembers(obj._wrapped)
+        return prev_completions + [c[0] for c in obj_members]
+
+# Importing IPython brings in about 200 modules, so we want to avoid it unless
+# we're in IPython (when those modules are loaded anyway).
+# Code attributed to Pandas, Thanks Wes 
+if "IPython" in sys.modules:  # pragma: no cover
+    try:
+        install_ipython_completers()
+    except Exception:
+        pass
