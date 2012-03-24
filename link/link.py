@@ -29,8 +29,9 @@ class Wrapper(Mock):
 
     _wrapped = None
 
-    def __init__(self, wrap_name = None, **kwargs):
+    def __init__(self, wrap_name = None, wrapped_object=None):
         self.wrap_name = wrap_name
+        self._wrapped = wrapped_object
         self._link = Link.instance()
 
     def __getattr__(self, name):

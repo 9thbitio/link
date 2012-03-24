@@ -18,8 +18,7 @@ class ResponseWrapper(Wrapper):
         self.response = response
         self._json = None
         self._xml = None
-        self._wrapped = response
-        super(ResponseWrapper, self).__init__(wrap_name)
+        super(ResponseWrapper, self).__init__(wrap_name, response)
 
     @property
     def json(self):

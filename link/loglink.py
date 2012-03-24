@@ -19,8 +19,7 @@ class LogWrapper(Wrapper):
         handler =logging.handlers.SysLogHandler(address=address)
         handler.setFormatter(logging.Formatter(message_format))
         self.log.addHandler(handler)
-        self._wrapped = self.log
-        super(LogWrapper, self).__init__(wrap_name)
+        super(LogWrapper, self).__init__(wrap_name, self.log)
 
 
 class LogLink(Linker):
