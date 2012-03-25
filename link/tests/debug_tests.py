@@ -1,6 +1,6 @@
 import unittest
-from vlinks import DebugLink, Linker
-from vlinks.link import MockLink, MockWrapper
+from link import DebugLink, Linker
+from link.link import MockLink, MockWrapper
 
 debug = DebugLink()
 
@@ -16,7 +16,6 @@ class MockDebugWrapper(MockWrapper):
 
     def mock_func(self, name, blah = False):
         return "listened"
-
 
 
 class TestLink(unittest.TestCase):
@@ -52,6 +51,7 @@ class TestLink(unittest.TestCase):
         self.assertFalse(listen_out.has_key('blah'))
 
 
-
 if __name__ == '__main__':
-        unittest.main()
+    import nose
+    nose.runmodule(argv=[__file__,'-vvs','-x','--pdb', '--pdb-failure'],
+                   exit=False)

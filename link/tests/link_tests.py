@@ -1,12 +1,11 @@
 import unittest
-from vlinks import DebugLink, MockWrapper, MockLink
 
-debug = DebugLink()
 
 class TestLink(unittest.TestCase):
 
     def setUp(self):
-        self.mock = MockLink()
+        pass
+        #self.mock = MockLink()
 
     def test_global_file(self):
         self.assertTrue(True)
