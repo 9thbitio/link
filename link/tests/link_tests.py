@@ -1,5 +1,5 @@
 import unittest
-
+from mock import Mock
 
 class TestLink(unittest.TestCase):
 
