@@ -1,4 +1,4 @@
-from link import Linker, Wrapper
+from link import Wrapper
 
 class ConnectionWrapper(Wrapper):
     """
@@ -68,13 +68,5 @@ class ConnectionWrapper(Wrapper):
         import sqlite3
         db = sqlite3.connect(path_to_db)
         return db
-
-
-class DbLink(Linker):
-    """
-    encapsualates database connections
-    """
-    def __init__(self):
-        super(DbLink, self).__init__('dbs', ConnectionWrapper)
 
 

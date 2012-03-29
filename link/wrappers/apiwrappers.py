@@ -8,8 +8,7 @@ from requests.auth import HTTPBasicAuth
 from functools import wraps
 import json
 from xml.etree import cElementTree as ET
-from link import Linker, Wrapper
-
+from link import Wrapper
 
 class ResponseWrapper(Wrapper):
     """
@@ -139,12 +138,4 @@ class RequestWrapper(Wrapper):
     def add_to_headers(self, key, value):
         self.headers[key] = value
 
-
-class APILink(Linker):
-    """
-    The linked API handler which gives you access to all of your configured
-    API's.  It will return an APIWrapper
-    """
-    def __init__(self, wrapper_object = RequestWrapper):
-        super(APILink, self).__init__('apis', wrapper_object)
 

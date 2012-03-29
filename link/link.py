@@ -1,6 +1,6 @@
 import os
 import sys
-from utils import json_load_file
+from utils import load_json_file
 from debuglink import DebugLink
 
 debug = DebugLink()
@@ -32,8 +32,8 @@ class Wrapper(Mock):
     def __init__(self, wrap_name = None, wrapped_object=None):
         self.wrap_name = wrap_name
         self._wrapped = wrapped_object
-        self._link = Link.instance()
-
+        #self._link = Link.instance()
+    
     def __getattr__(self, name):
         """
         wrap a special object if it exists
@@ -68,7 +68,7 @@ class Link(Mock):
     USER_GLOBAL_CONFIG = '%s/.link/link.config' % os.getenv('HOME')
 
     @classmethod
-    def global_config_file(cls):
+    def config_file(cls):
         """
         Gives you the global config based on the hierchial lookup::
 
@@ -89,14 +89,14 @@ class Link(Mock):
         which shares your configuration across all other Linked
         objects
         """
-        if not config_file:
-            config_file = cls.global_config_file()
-
         if cls.__link_instance:
             return cls.__link_instance
 
-        __link_instance = Link(config_file)
-        return __link_instance
+        if not config_file:
+            config_file = cls.config_file()
+        
+        cls.__link_instance = Link(config_file)
+        return cls.__link_instance
 
     def __init__(self, config_file):
         """
@@ -104,15 +104,35 @@ class Link(Mock):
         through the instance() method.
         """
         self.config_file = config_file
-        self.__config = json_load_file(config_file)
+        self.__config = load_json_file(config_file)
+        #i think if you try to set linker = Linker()
+        #here it causes an infinite loop
+        self.linker = None
 
-    @property
-    def config(self):
+    def config(self, config_lookup = None):
         """
-        returns the configuration that is in the Link.  This property
-        will allow for us to add more logic later on.
+        If you have a conf_key then return the
+        dictionary of the configuration
         """
+        ret = self.__config
+
+        if config_lookup:
+            try:
+                for value in config_lookup.split('.'):
+                    ret = ret[value] 
+            except KeyError:
+                raise('No such configured object %s' % config_lookup)
+            return ret
+
         return self.__config
+
+    def __call__(self, *kargs, **kwargs):
+        if not self.linker:
+            self.linker = Linker()
+        
+        return self.linker(*kargs, **kwargs)
+
+lnk = Link.instance()
 
 class Linker(Mock):
     """
@@ -126,19 +146,26 @@ class Linker(Mock):
         self.conf_key = conf_key
         self.wrapper_object = wrapper_object
 
-    @property
-    def config(self):
+    def config(self, config_lookup = None):
         """
         If you have a conf_key then return the
         dictionary of the configuration
         """
+        ret = self._link.config()
+
+        if config_lookup:
+            try:
+                for value in config_lookup.split('.'):
+                    ret = ret[value] 
+            except KeyError:
+                raise('No such configured object %s' % config_lookup)
         if self.conf_key:
             try:
                 return self._link.config[self.conf_key]
             except:
                 raise Exception("Nothing configured for %s " % self.conf_key)
 
-        return None
+        return None 
 
     def configured_links(function):
         """
@@ -150,23 +177,63 @@ class Linker(Mock):
     def linker(func):
         """
         A linker function is one that links your configuration
-        to an actual instance of a linked object
+        to an actual instance of a linked object.  The key is a '.'
+        seperated list of keys to look up in the configuration.  For 
+        instance prod.dbs.mydb, it would look up this key in your
+        configuration::
+
+            {
+            "prod":
+                {"dbs":
+                    {
+                    "mydb":{
+                        "host":"<myhost>"
+                        ...
+                    }
+                }
+            }
+    
         """
-        def get_configured_object(self, wrap_name=None, **kwargs):
+        def get_configured_object(self, wrap_name=None, override_config = False, **kwargs):
             """
             calls back the function with a fully wrapped class
             """
-            #if they supply a name we want to just create the object from the configuratian and return it
-            if not self.conf_key or wrap_name:
-                wrap_config = {}
-                if wrap_name:
-                    wrap_config = self.config[wrap_name]
+            #if they supply a name we want to just create the object 
+            #from the configuratian and return it
+            if wrap_name:
+                wrap_config = self._link.config(wrap_name)
+                if not wrap_config:
+                    raise Exception('No such key in configuration: %s' 
+                                           % wrap_name)
+
+                # if they override the config then
+                # update what is in the config with the 
+                # parameters passed in
+                if override_config:
+                    wrap_config.update(kwargs)
+                else:
+                    kwargs.update(wrap_config)
+                    wrap_config = kwargs
+    
+                # if it is here we want to remove before we pass through
+                wrapper = wrap_config.pop('wrapper', None)
+                    
+                # if they tell us what type it should be then use it
+                if wrapper:
+                    try:
+                        import wrappers
+                        wrapper = wrappers.__getattribute__(wrapper)
+                    except AttributeError as e:
+                        raise Exception('Wrapper cannot be found by the' +
+                                        ' link class when loading: %s ' % (wrapper))
+                else:
+                    wrapper = Wrapper
 
                 try:
-                    return self.wrapper_object(wrap_name = wrap_name, **wrap_config)
+                    return wrapper(wrap_name = wrap_name, **wrap_config)
                 except TypeError as e:
-                    raise e
-                    raise Exception('Wrapper does not except the configured arguments %s' % wrap_config.keys())
+                    raise Exception('<%s> does not except the configured arguments %s' %
+                                    (wrapper, ','.join(wrap_config.keys())))
 
             #otherwise jost called the wrapped function
             return self.wrapper_object(**kwargs)
@@ -180,7 +247,7 @@ class Linker(Mock):
         """
         pass
 
-    def __call__(self, wrap_name = None, *kargs, **kwargs):
+    def __call__(self, wrap_name = None, override_config = False, *kargs, **kwargs):
         """
         Make it so you can call Linker(wrap) and have that return a link for the
         configured wrap

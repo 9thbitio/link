@@ -1,6 +1,6 @@
 import os
 
-def json_load_file(file_name):
+def load_json_file(file_name):
     """
     given a file name this function will json decode it and
     return a dictionary
