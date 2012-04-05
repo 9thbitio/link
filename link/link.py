@@ -45,9 +45,6 @@ class Wrapper(Mock):
                 return self._wrapped.__getattribute__(name)
             raise e
 
-    def run(self):
-        pass
-
 
 class MockWrapper(Wrapper):
 
@@ -105,6 +102,7 @@ class Link(Mock):
         """
         self.config_file = config_file
         self.__config = load_json_file(config_file)
+
         #i think if you try to set linker = Linker()
         #here it causes an infinite loop
         self.linker = None
@@ -121,7 +119,7 @@ class Link(Mock):
                 for value in config_lookup.split('.'):
                     ret = ret[value] 
             except KeyError:
-                raise('No such configured object %s' % config_lookup)
+                raise Exception('No such configured object %s' % config_lookup)
             return ret
 
         return self.__config

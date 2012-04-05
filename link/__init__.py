@@ -9,5 +9,5 @@ from debuglink import DebugLink
 #from loglink import LogLink
 from link import lnk
 
-lnk = Link.instance()
+#lnk = Link.instance()
 

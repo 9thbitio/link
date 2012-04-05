@@ -1,7 +1,7 @@
 import unittest
 import json
 from mock import Mock, MagicMock
-from link.apilink import APILink, RequestWrapper, ResponseWrapper
+from link.wrappers import RequestWrapper, ResponseWrapper
 from xml.etree import cElementTree as ET
 
 class TestResponseWrapper(unittest.TestCase):

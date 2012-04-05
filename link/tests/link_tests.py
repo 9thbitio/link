@@ -1,10 +1,13 @@
 import unittest
-from link import Link, Linker
+import os
+from link import Link
 from link.utils import load_json_file
 from mock import Mock
 
+TEST_CONFIG = '%s/test_link.config' % (os.path.dirname(__file__))
+
 #have to be careful that we have not called instance before
-lnk = Link.instance(config_file='test_link.config')
+lnk = Link.instance(config_file=TEST_CONFIG)
 
 class TestLink(unittest.TestCase):
 
@@ -12,21 +15,18 @@ class TestLink(unittest.TestCase):
         self.link = lnk
 
     def test_config(self):
-        self.assertEquals(self.link.config, load_json_file('test_link.config'))
+        self.assertEquals(self.link.config, load_json_file(TEST_CONFIG))
 
     def test_instance(self):
-        self.assertNotEquals(self.link, Link('test_link.config'))
+        self.assertNotEquals(self.link, Link(TEST_CONFIG))
         #check to make sure this is a singleton
         self.assertEquals(self.link,
-                          Link.instance(config_file='test_link.config'))
+                          Link.instance(config_file=TEST_CONFIG))
 
-class TestLinker(unittest.TestCase):
+    def test_config_lookup(self):
+        lookup = self.link.config('apis.test_api')
+        print lookup
 
-    def setUp(self):
-        self.linker = Linker('dbs')  
-
-    def test_config(self):
-        
 
 class TestWrapper(unittest.TestCase):
     pass

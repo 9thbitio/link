@@ -1,20 +1,21 @@
 from link import Wrapper
 
-class ConnectionWrapper(Wrapper):
+
+class DBConnectionWrapper(Wrapper):
     """
     wraps a database connection and extends the functionality
     to do tasks like put queries into dataframes
     """
-    def __init__(self, wrap_name = None, db_type=None, user=None, password=None,
-                 host=None, path=None):
+    def __init__(self, wrap_name = None, db_type=None, 
+                 user=None, password=None, host=None, path=None):
         self.db_type = db_type
         self.user = user
         self.password = password
         self.host = host
         self.path = path
         #get the connection and pass it to wrapper os the wrapped object
-        connection = self._get_connection()
-        super(ConnectionWrapper, self).__init__(wrap_name, connection)
+        connection = self.create_connection()
+        super(DBConnectionWrapper, self).__init__(wrap_name, connection)
     
     #TODO: Add in the ability to pass in params and also index 
     def select_dataframe(self, query):
@@ -27,9 +28,10 @@ class ConnectionWrapper(Wrapper):
         except:
             raise Exception("pandas required to select dataframe. Please install"  + 
                             "sudo easy_install pandas")
+
         cursor = self.execute(query)
         data = cursor.fetchall()
-        columns = [x[0] for x in cursor.description]
+        columns = [x[0].lower() for x in cursor.description]
         
         #check to see if they have duplicate column names
         if len(columns)>len(set(columns)):
@@ -47,26 +49,40 @@ class ConnectionWrapper(Wrapper):
         data = cursor.fetchall()
         return data
  
-    def _get_connection(self):
+    def create_connection(self):
         """
-        Connect to different types of databases that
-        are configured.  Note, everytime you call connection it
-        will be a brand new connection
+        Override this function to create a depending on the type
+        of database
+
+        :returns: connection to the database you want to use
         """
+        pass
 
-        db_type = self.db_type
 
-        if db_type =='sqlite':
-            return self._connect_sqlite(self.path)
+class SqliteDBConnectionWrapper(DBConnectionWrapper):
 
-        raise Exception("No such db_type %s " % db_type)
-
-    def _connect_sqlite(self, path_to_db):
+    def __init__(self, wrap_name=None, path=None, create_db = True):
         """
-        Connect a sqlite database
+        A connection for a SqlLiteDb.  Requires that sqlite3 is
+        installed into python
+
+        :param path: Path to the sqllite db
+        :param create_db: if True Create if it does not exist in the 
+                          file system.  Otherwise throw an error
+        """
+        self.create_db = create_db
+        if not path:
+            raise Exception("Path Required to create a sqllite connection")
+        super(SqliteDBConnectionWrapper, self).__init__(wrap_name=wrap_name, 
+                                                  path=path)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the DbConnectionWrapper
+        class which get's called in it's initializer
         """
         import sqlite3
-        db = sqlite3.connect(path_to_db)
+        db = sqlite3.connect(self.path)
         return db
 
 
