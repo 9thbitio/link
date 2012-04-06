@@ -1,22 +1,28 @@
 from link import Wrapper
-
+from link.utils import list_to_dataframe
 
 class DBConnectionWrapper(Wrapper):
     """
     wraps a database connection and extends the functionality
     to do tasks like put queries into dataframes
     """
-    def __init__(self, wrap_name = None, db_type=None, 
-                 user=None, password=None, host=None, path=None):
-        self.db_type = db_type
-        self.user = user
-        self.password = password
-        self.host = host
-        self.path = path
+    def __init__(self, wrap_name = None, **kwargs):
+        
+        if kwargs:
+            self.__dict__.update(kwargs)
+
         #get the connection and pass it to wrapper os the wrapped object
         connection = self.create_connection()
         super(DBConnectionWrapper, self).__init__(wrap_name, connection)
     
+    def execute(self, query):
+        """
+        Creates a cursor and executes the query for you
+        """
+        cursor = self._wrapped.cursor()
+        cursor.execute(query)
+        return cursor
+
     #TODO: Add in the ability to pass in params and also index 
     def select_dataframe(self, query):
         """
@@ -37,7 +43,7 @@ class DBConnectionWrapper(Wrapper):
         if len(columns)>len(set(columns)):
             raise Exception("Cannot have duplicate column names " +
                             "in your query %s, please rename" % columns)
-        return DataFrame(data, columns=columns)
+        return list_to_dataframe(data, columns) 
     
     def select(self, query):
         """
@@ -84,5 +90,45 @@ class SqliteDBConnectionWrapper(DBConnectionWrapper):
         import sqlite3
         db = sqlite3.connect(self.path)
         return db
+
+
+class MysqlDBConnectionWrapper(DBConnectionWrapper):
+
+    def __init__(self, wrap_name=None, user=None, password=None, 
+                 host=None, database=None):
+        """
+        A connection for a Mysql Database.  Requires that
+        MySQLdb is installed
+
+        :param user: your user name for that database 
+        :param password: Your password to the database
+        :param host: host name or ip of the database server
+        :param database: name of the database on that server 
+        """
+        self.user = user
+        self.password = password
+        self.host = host
+        self.database = database
+        super(MysqlDBConnectionWrapper, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the DbConnectionWrapper
+        class which get's called in it's initializer
+        """
+        import MySQLdb.connections
+        import MySQLdb.converters
+        import MySQLdb
+        
+        # make it so that it uses floats instead of those Decimal objects
+        # these are really slow when trying to load into numpy arrays and 
+        # into pandas
+        conv = MySQLdb.converters.conversions.copy()
+        conv[MySQLdb.constants.FIELD_TYPE.DECIMAL] = float
+        conv[MySQLdb.constants.FIELD_TYPE.NEWDECIMAL] = float
+        conn = MySQLdb.connect(host=self.host, user=self.user, 
+                               db=self.database, passwd=self.password,
+                               conv=conv)
+        return conn
 
 
