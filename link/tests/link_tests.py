@@ -5,8 +5,8 @@ from link.utils import load_json_file
 from link.tests import *
 
 DIR = os.path.dirname(__file__)
-TEST_CONFIG = 'test_link.config' 
-TEST_CONFIG2 = 'test_link2.config'
+TEST_CONFIG = 'test_link.test_config' 
+TEST_CONFIG2 = 'test_link2.test_config'
 
 #load in all the configs that we want
 lnk = Link.instance()

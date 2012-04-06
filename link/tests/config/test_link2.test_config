@@ -1,0 +1,15 @@
+{
+    "dbs": {
+        "sqlite_db": {
+            "db_type": "sqlite",
+            "path": "test_db.sqlite"
+        }
+    },
+    "apis": {
+        "test_api": {
+            "base_url": "test_url2",
+            "user": "test_user2",
+            "password": "test_password2"
+        }
+    }
+}

@@ -12,7 +12,7 @@ class TestUtils(unittest.TestCase):
         self.assertRaises(Exception, load_json_file, 'this is not a file')
 
     def test_bad_json(self):
-        bad_config = tst_config_path('bad_json.config')
+        bad_config = tst_config_path('bad_json.test_config')
         self.assertRaises(Exception, load_json_file, bad_config)
 
 if __name__ == '__main__':
