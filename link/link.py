@@ -1,5 +1,6 @@
 import os
 import sys
+import inspect
 from utils import load_json_file
 from debuglink import DebugLink
 
@@ -94,6 +95,35 @@ class Link(Mock):
         cls.__link_instance = Link()
         return cls.__link_instance
     
+    def _get_all_wrappers(self, mod_or_package):
+        """
+        Given a module or package name in returns all
+        classes that could possibly be a wrapper in 
+        a dictionary
+        """
+        wrapper_mod = __import__(mod_or_package, fromlist = ['*'])
+        wrapper_classes = dict([(name,obj) for name, obj in
+                                inspect.getmembers(wrapper_mod) if
+                                inspect.isclass(obj)])
+        return wrapper_classes
+
+    def load_wrappers(self):
+        
+        #load all the standard ones first
+        self.wrappers = self._get_all_wrappers('link.wrappers')
+        ext_wrappers = self.__config.get('external_wrappers')
+
+        if ext_wrappers:
+            for ext_path in ext_wrappers:
+                path_details = ext_path.rstrip('/').split('/')
+                #the path we add to sys.path is this without the last word
+                path = '/'.join(path_details[:-1])
+                mod = path_details[-1]
+                if path not in sys.path:
+                    sys.path.append(path)
+                wrapper_classes = self._get_all_wrappers(mod)
+                self.wrappers.update(wrapper_classes) 
+    
     def fresh(self, config_file=None, namespace=None):
         """
         sets the environment with a fresh config or namespace that is not
@@ -106,7 +136,7 @@ class Link(Mock):
         self.config_file = config_file
         self.__config = load_json_file(config_file)
         self.namespace = namespace
-
+        self.wrappers = {}
 
     def __init__(self, config_file=None, namespace=None):
         """
@@ -115,6 +145,7 @@ class Link(Mock):
         """
         #i think if you try to set linker = Linker()
         #here it causes an infinite loop
+        self.wrappers = {}
         self.linker = None
         self.fresh(config_file, namespace)
 
@@ -154,27 +185,6 @@ class Linker(Mock):
         self._link = Link.instance()
         self.conf_key = conf_key
         self.wrapper_object = wrapper_object
-
-    #def config(self, config_lookup = None):
-        #"""
-        #If you have a conf_key then return the
-        #dictionary of the configuration
-        #"""
-        #ret = self._link.config()
-
-        #if config_lookup:
-            #try:
-                #for value in config_lookup.split('.'):
-                    #ret = ret[value] 
-            #except KeyError:
-                #raise('No such configured object %s' % config_lookup)
-        #if self.conf_key:
-            #try:
-                #return self._link.config[self.conf_key]
-            #except:
-                #raise Exception("Nothing configured for %s " % self.conf_key)
-
-        #return None 
 
     def configured_links(function):
         """
@@ -225,8 +235,10 @@ class Linker(Mock):
                 # if they tell us what type it should be then use it
                 if wrapper:
                     try:
-                        import wrappers
-                        wrapper = wrappers.__getattribute__(wrapper)
+                        #look up the module in our wrappers dictionary
+                        if not self._link.wrappers:
+                            self._link.load_wrappers()
+                        wrapper = self._link.wrappers[wrapper]
                     except AttributeError as e:
                         raise Exception('Wrapper cannot be found by the' +
                                         ' link class when loading: %s ' % (wrapper))
@@ -239,7 +251,7 @@ class Linker(Mock):
                     raise Exception('<%s> does not except the configured arguments %s' %
                                     (wrapper, ','.join(wrap_config.keys())))
 
-            #otherwise jost called the wrapped function
+            #otherwise just called the wrapped function
             return self.wrapper_object(**kwargs)
 
         return get_configured_object
