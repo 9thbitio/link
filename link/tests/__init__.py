@@ -5,6 +5,9 @@ from link.utils import load_json_file
 
 TESTS_DIR = os.path.dirname(__file__)
 
+def tst_file_path(file_name):
+    return '%s/%s' % (TESTS_DIR, file_name)
+
 def tst_config_path(config_name):
     return '%s/config/%s' % (TESTS_DIR, config_name)
 

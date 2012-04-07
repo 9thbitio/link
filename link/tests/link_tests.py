@@ -15,6 +15,11 @@ config1_path = tst_config_path(TEST_CONFIG)
 config2 = load_tst_config(TEST_CONFIG2)
 config2_path = tst_config_path(TEST_CONFIG2)
 
+FAKE_WRAPPER_PATH1 = tst_file_path('fake_wrappers')
+FAKE_WRAPPER_PATH2 = tst_file_path('fake_wrappers.fake_wrap2')
+FAKE_WRAPPER_PACKAGE1 = 'fake_wrappers'
+FAKE_WRAPPER_PACKAGE2 = 'fake_wrappers.fake_wrap2'
+
 class TestLink(unittest.TestCase):
 
     def setUp(self):
@@ -61,6 +66,24 @@ class TestLink(unittest.TestCase):
         self.assertEquals(api.wrap_name, wrap_name)
         self.assertEquals(api.user, user_override)
         self.assertEquals(api.password, lnk.config('apis.test_api.password'))
+
+    def test_load_wrapper_directories(self):
+        lnk.fresh()
+        self.assertEquals(lnk.wrappers, {})
+        lnk.load_wrapper_directories([FAKE_WRAPPER_PATH1])
+        self.assertTrue(lnk.wrappers.has_key('FakeWrapper'))
+        self.assertFalse(lnk.wrappers.has_key('FakeWrapper2'))
+        lnk.load_wrapper_directories([FAKE_WRAPPER_PATH2])
+        self.assertTrue(lnk.wrappers.has_key('FakeWrapper2'))
+
+    def test_load_wrapper_packages(self):
+        lnk.fresh()
+        self.assertEquals(lnk.wrappers, {})
+        lnk.load_wrapper_packages([FAKE_WRAPPER_PACKAGE1])
+        self.assertTrue(lnk.wrappers.has_key('FakeWrapper'))
+        self.assertFalse(lnk.wrappers.has_key('FakeWrapper2'))
+        lnk.load_wrapper_packages([FAKE_WRAPPER_PACKAGE2])
+        self.assertTrue(lnk.wrappers.has_key('FakeWrapper2'))
 
 
 class TestWrapper(unittest.TestCase):

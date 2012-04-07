@@ -101,39 +101,64 @@ class Link(Mock):
         classes that could possibly be a wrapper in 
         a dictionary
         """
-        wrapper_mod = __import__(mod_or_package, fromlist = ['*'])
-        wrapper_classes = dict([(name,obj) for name, obj in
+        try:
+            wrapper_mod = __import__(mod_or_package, fromlist = ['*'])
+        except ImportError as e:
+            raise ImportError("No such wrapper in the PYTHONPATH: %s" %
+                              e.message)
+        #get all classes by name and put them into a dictionary
+        wrapper_classes = dict([(name,cls) for name, cls in
                                 inspect.getmembers(wrapper_mod) if
-                                inspect.isclass(obj)])
+                                inspect.isclass(cls)])
         return wrapper_classes
 
     def load_wrappers(self):
-        
+        """
+        loads up all the wrappers that can be accessed right now
+        """
         #load all the standard ones first
         self.wrappers = self._get_all_wrappers('link.wrappers')
-        ext_wrappers = self.__config.get('external_wrappers')
-
-        if ext_wrappers:
-            for ext_path in ext_wrappers:
+        directories = self.__config.get('external_wrapper_directories')
+        self.load_wrapper_directories(directories)
+        packages = self.__config.get('external_wrapper_packages')
+        self.load_wrapper_packages()
+    
+    def load_wrapper_directories(self, directories):
+        """
+        Load in all of the external_wrapper_directories
+        """
+        if directories:
+            for ext_path in directories:
                 path_details = ext_path.rstrip('/').split('/')
                 #the path we add to sys.path is this without the last word
                 path = '/'.join(path_details[:-1])
                 mod = path_details[-1]
+                #TODO: Need to put an error here if this directory does not 
+                # exist
                 if path not in sys.path:
                     sys.path.append(path)
                 wrapper_classes = self._get_all_wrappers(mod)
                 self.wrappers.update(wrapper_classes) 
     
+    def load_wrapper_packages(self, packages):
+        """
+        load in all of the external_wrapper_packages
+        """
+        #load in all the packages 
+        if packages:
+            for ext_mod in packages:
+                wrapper_classes = self._get_all_wrappers(ext_mod)
+                self.wrappers.update(wrapper_classes) 
+ 
     def fresh(self, config_file=None, namespace=None):
         """
         sets the environment with a fresh config or namespace that is not
         the defaults if config_file or namespace parameters are given
-
         """
         if not config_file:
             config_file = self.config_file()
  
-        self.config_file = config_file
+        self.__config_file = config_file
         self.__config = load_json_file(config_file)
         self.namespace = namespace
         self.wrappers = {}
