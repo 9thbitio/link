@@ -121,7 +121,7 @@ class Link(Mock):
         directories = self.__config.get('external_wrapper_directories')
         self.load_wrapper_directories(directories)
         packages = self.__config.get('external_wrapper_packages')
-        self.load_wrapper_packages()
+        self.load_wrapper_packages(packages)
     
     def load_wrapper_directories(self, directories):
         """
