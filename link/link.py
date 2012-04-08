@@ -26,33 +26,6 @@ class Mock(object):
         return self.__getattribute__(function_name)(*kargs, **kwargs)
 
 
-class Wrapper(Mock):
-
-    _wrapped = None
-
-    def __init__(self, wrap_name = None, wrapped_object=None, **kwargs):
-        self.wrap_name = wrap_name
-        self._wrapped = wrapped_object
-        self.__dict__.update(kwargs)
-        #self._link = Link.instance()
-    
-    def __getattr__(self, name):
-        """
-        wrap a special object if it exists
-        """
-        try:
-            return self.__getattribute__(name)
-        except Exception as e:
-            if self._wrapped is not None:
-                return self._wrapped.__getattribute__(name)
-            raise e
-
-
-class MockWrapper(Wrapper):
-
-    def __init__(self, wrap_name = None):
-        super(MockWrapper, self).__init__(wrap_name=wrap_name)
-
 
 class Link(Mock):
     """
@@ -173,6 +146,16 @@ class Link(Mock):
         self.wrappers = {}
         self.linker = None
         self.fresh(config_file, namespace)
+    
+    def __getattr__(self, name):
+        try:
+            return self.__getattribute__(name)
+        except Exception as e:
+            try:
+                return self(wrap_name = name, **self.__config[name].copy())
+            except:
+                raise Exception('Link has no attribute %s and none is configured'
+                                % name)
 
     def config(self, config_lookup = None):
         """
@@ -198,6 +181,40 @@ class Link(Mock):
         return self.linker(*kargs, **kwargs)
 
 lnk = Link.instance()
+
+
+class Wrapper(Mock):
+
+    _wrapped = None
+
+    def __init__(self, wrap_name = None, wrapped_object=None, **kwargs):
+        self.wrap_name = wrap_name
+        self._wrapped = wrapped_object
+        self.__dict__['__link_config__'] = kwargs
+        #self._link = Link.instance()
+    
+    def __getattr__(self, name):
+        """
+        wrap a special object if it exists
+        """
+        try:
+            ret = self.__getattribute__(name)
+        except Exception as e:
+            if self._wrapped is not None:
+                return self._wrapped.__getattribute__(name)
+            if self.wrap_name:
+                return lnk('%s.%s' % (self.wrap_name, name))
+            raise e
+
+    def config(self):
+        return self.__link_config__
+
+
+class MockWrapper(Wrapper):
+
+    def __init__(self, wrap_name = None):
+        super(MockWrapper, self).__init__(wrap_name=wrap_name)
+
 
 class Linker(Mock):
     """
@@ -245,7 +262,7 @@ class Linker(Mock):
             #if they supply a name we want to just create the object 
             #from the configuratian and return it
             if wrap_name:
-                wrap_config = self._link.config(wrap_name)
+                wrap_config = self._link.config(wrap_name).copy()
 
                 # if they override the config then
                 # update what is in the config with the 
@@ -315,7 +332,16 @@ def install_ipython_completers():  # pragma: no cover
         visible in iPython as well
         """
         obj_members = inspect.getmembers(obj._wrapped)
-        return prev_completions + [c[0] for c in obj_members]
+        return (prev_completions + [c[0] for c in obj_members] + 
+                [c for c in obj.config().keys()])
+
+    @complete_object.when_type(Link)
+    def complete_link(obj, prev_completions):
+        """
+        Add in all the methods of the _wrapped object so its
+        visible in iPython as well
+        """
+        return prev_completions + [c for c in obj.config().keys()]
 
 # Importing IPython brings in about 200 modules, so we want to avoid it unless
 # we're in IPython (when those modules are loaded anyway).
