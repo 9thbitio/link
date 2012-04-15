@@ -66,7 +66,9 @@ class DBConnectionWrapper(Wrapper):
 
 
 class SqliteDBConnectionWrapper(DBConnectionWrapper):
-
+    """
+    A connection wrapper for a sqlite database
+    """
     def __init__(self, wrap_name=None, path=None, create_db = True):
         """
         A connection for a SqlLiteDb.  Requires that sqlite3 is

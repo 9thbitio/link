@@ -52,9 +52,10 @@ class TestLink(unittest.TestCase):
     def test_default_wrapper(self):
         wrap_name = 'apis.test_api'
         api = lnk(wrap_name)
+        config = api.config()
         self.assertEquals(api.wrap_name, wrap_name)
-        self.assertEquals(api.user, lnk.config('apis.test_api.user'))
-        self.assertEquals(api.password, lnk.config('apis.test_api.password'))
+        self.assertEquals(config['user'], lnk.config('apis.test_api.user'))
+        self.assertEquals(config['password'], lnk.config('apis.test_api.password'))
     
     def test_wrapper_not_configured(self):
         self.assertRaises(Exception, lnk, 'this.is.not.a.key')
@@ -63,9 +64,10 @@ class TestLink(unittest.TestCase):
         wrap_name = 'apis.test_api'
         user_override = 'this is the overridden user'
         api = lnk(wrap_name, user=user_override)
+        config = api.config()
         self.assertEquals(api.wrap_name, wrap_name)
-        self.assertEquals(api.user, user_override)
-        self.assertEquals(api.password, lnk.config('apis.test_api.password'))
+        self.assertEquals(config['user'], user_override)
+        self.assertEquals(config['password'], lnk.config('apis.test_api.password'))
 
     def test_load_wrapper_directories(self):
         lnk.fresh()

@@ -10,7 +10,7 @@ import json
 from xml.etree import cElementTree as ET
 from link import Wrapper
 
-class ResponseWrapper(Wrapper):
+class APIResponseWrapper(Wrapper):
     """
     Wrap an API response and make it easy to parse out
     json or XML
@@ -18,7 +18,7 @@ class ResponseWrapper(Wrapper):
     def __init__(self, response, wrap_name = None):
         self._json = None
         self._xml = None
-        super(ResponseWrapper, self).__init__(wrap_name, response)
+        super(APIResponseWrapper, self).__init__(wrap_name, response)
 
     @property
     def json(self):
@@ -57,7 +57,7 @@ class ResponseWrapper(Wrapper):
             return ET.tostring(self._xml)
 
 
-class RequestWrapper(Wrapper):
+class APIRequestWrapper(Wrapper):
     """
     Wraps the requests class so that all you have to give is
     extra url parameters for it to work fine
@@ -65,36 +65,27 @@ class RequestWrapper(Wrapper):
     requests = requests
     headers = {'Accept': '*/*',
                         'Accept-Encoding': 'identity, deflate, compress, gzip',
-                        'User-Agent': 'python-requests/0.8.3'
+                        'User-Agent': 'Mozilla/5.0'
                       }
 
     def __init__(self, wrap_name=None, base_url=None, user=None, password=None):
         self.base_url = base_url
         self.user = user
         self.password = password
-        #we will use the requests package to be the one wrapped but we could use
-        #our own
-        self._auth = None 
-        self._authed = False
-        super(RequestWrapper, self).__init__(wrap_name, self.requests)
+        sess = requests.session(headers = self.headers)
+        super(APIRequestWrapper, self).__init__(wrap_name, sess)
+        sess.auth = self.authenticate() 
     
-    @property
-    def auth(self):
+    def authenticate(self):
         """
         The Auth Property uses HTTPBasicAuth by defaust, but you can override
         this property if you want to use another type or auth.  The result
         is passed into requests.auth. 
         """
-        if self._authed or self._auth is not None:
-            return self._auth
-
         if self.user and self.password:
-            self._auth = HTTPBasicAuth(self.user, self.password)
-            self._authed = True
+            return HTTPBasicAuth(self.user, self.password)
 
-        return self._auth 
-
-    def request(self, method='get', url_params = '' , data = '', use_auth=True):
+    def request(self, method='get', url_params = '' , data = '', **kwargs):
         """
         Make a request.  This is taken care af by the request decorator
         """
@@ -105,37 +96,33 @@ class RequestWrapper(Wrapper):
 
         full_url = self.base_url + url_params
         #turn the string method into a function name
-        method = self.requests.__getattribute__(method)
+        method = self._wrapped.__getattribute__(method)
+        resp = APIResponseWrapper(method(full_url, data = data, **kwargs))
+        return resp
     
-        #if we are supposed to use auth then call it 
-        auth = None
-        if use_auth:
-            auth = self.auth
-
-        return ResponseWrapper(method(full_url, auth = auth,
-                                        headers = self.headers, data = data))
-
-    def get(self, url_params = '', use_auth=True):
+    def get(self, url_params = '', **kwargs):
         """
         Make a get call
         """
-        return self.request('get', url_params = url_params, use_auth = use_auth)
+        return self.request('get', url_params = url_params, **kwargs)
 
-    def put(self, url_params='', data='', use_auth=True):
+    def put(self, url_params='', data='', **kwargs):
         """
         Make a put call
         """
-        return self.request('put', url_params = url_params, data = data, 
-                            use_auth = use_auth)
+        return self.request('put', url_params = url_params, data = data,
+                            **kwargs)
 
-    def post(self, url_params='', data='', use_auth=True):
+    def post(self, url_params='', data='', **kwargs):
         """
         Make a post call
         """
         return self.request('post', url_params = url_params, data = data,
-                            use_auth=use_auth)
+                            **kwargs)
 
-    def add_to_headers(self, key, value):
-        self.headers[key] = value
-
+    def clear_session(self):
+        """
+        clear the cookies you have accumulated
+        """
+        self.sess = requests.session(headers = self.headers)
 

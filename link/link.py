@@ -2,32 +2,8 @@ import os
 import sys
 import inspect
 from utils import load_json_file
-from debuglink import DebugLink
 
-debug = DebugLink()
-
-class Mock(object):
-
-    @debug.listen
-    def debug_listen(self, function_name, *kargs, **kwargs):
-        """
-        Lets you listen any wrapper or linker to see what the args are to the
-        function.  Differs from debug_inspect because it does not do the 
-        function call and will not give you back the results of the call
-        """
-        return self.__getattribute__(function_name)(*kargs, **kwargs)
-
-    @debug.inspect
-    def debug_inspect(self, function_name, *kargs, **kwargs):
-        """
-        Lets you listen any wrapper or linker.  Gives you the inputs and 
-        results of the function
-        """
-        return self.__getattribute__(function_name)(*kargs, **kwargs)
-
-
-
-class Link(Mock):
+class Link(object):
     """
     Link is a singleton that keeps all configuration for the program. It is
     used by any Linked object so that there can be a shared configuration across
@@ -180,11 +156,14 @@ class Link(Mock):
         
         return self.linker(*kargs, **kwargs)
 
+
 lnk = Link.instance()
 
 
-class Wrapper(Mock):
-
+class Wrapper(object):
+    """
+    The wrapper wraps a piece of the configuration.  
+    """
     _wrapped = None
 
     def __init__(self, wrap_name = None, wrapped_object=None, **kwargs):
@@ -210,13 +189,7 @@ class Wrapper(Mock):
         return self.__link_config__
 
 
-class MockWrapper(Wrapper):
-
-    def __init__(self, wrap_name = None):
-        super(MockWrapper, self).__init__(wrap_name=wrap_name)
-
-
-class Linker(Mock):
+class Linker(object):
     """
     Linked Objects are ones that are linked to the Link
     instance, which carries the global configuration
@@ -261,37 +234,38 @@ class Linker(Mock):
             """
             #if they supply a name we want to just create the object 
             #from the configuratian and return it
+            wrap_config = {}
             if wrap_name:
                 wrap_config = self._link.config(wrap_name).copy()
 
-                # if they override the config then
-                # update what is in the config with the 
-                # parameters passed in
-                if kwargs:
-                    wrap_config = wrap_config.copy()
-                    wrap_config.update(kwargs)
-    
-                # if it is here we want to remove before we pass through
-                wrapper = wrap_config.pop('wrapper', None)
-                    
-                # if they tell us what type it should be then use it
-                if wrapper:
-                    try:
-                        #look up the module in our wrappers dictionary
-                        if not self._link.wrappers:
-                            self._link.load_wrappers()
-                        wrapper = self._link.wrappers[wrapper]
-                    except AttributeError as e:
-                        raise Exception('Wrapper cannot be found by the' +
-                                        ' link class when loading: %s ' % (wrapper))
-                else:
-                    wrapper = Wrapper
+            # if they override the config then
+            # update what is in the config with the 
+            # parameters passed in
+            if kwargs:
+                wrap_config = wrap_config.copy()
+                wrap_config.update(kwargs)
 
+            # if it is here we want to remove before we pass through
+            wrapper = wrap_config.pop('wrapper', None)
+                
+            # if they tell us what type it should be then use it
+            if wrapper:
                 try:
-                    return wrapper(wrap_name = wrap_name, **wrap_config)
-                except TypeError as e:
-                    raise Exception('<%s> does not except the configured arguments %s' %
-                                    (wrapper, ','.join(wrap_config.keys())))
+                    #look up the module in our wrappers dictionary
+                    if not self._link.wrappers:
+                        self._link.load_wrappers()
+                    wrapper = self._link.wrappers[wrapper]
+                except AttributeError as e:
+                    raise Exception('Wrapper cannot be found by the' +
+                                    ' link class when loading: %s ' % (wrapper))
+            else:
+                wrapper = Wrapper
+
+            try:
+                return wrapper(wrap_name = wrap_name, **wrap_config)
+            except TypeError as e:
+                raise Exception('Error wrapping configuration with object %s, message %s ' %
+                                (wrapper, e.message))
 
             #otherwise just called the wrapped function
             return self.wrapper_object(**kwargs)
@@ -311,12 +285,6 @@ class Linker(Mock):
         configured wrap
         """
         return self.links(wrap_name, **kwargs)
-
-
-class MockLink(Linker):
-
-    def __init__(self):
-        super(MockLink, self).__init__('', MockWrapper)
 
 
 def install_ipython_completers():  # pragma: no cover
