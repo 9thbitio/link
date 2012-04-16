@@ -15,7 +15,7 @@ class APIResponseWrapper(Wrapper):
     Wrap an API response and make it easy to parse out
     json or XML
     """
-    def __init__(self, response, wrap_name = None):
+    def __init__(self, wrap_name = None, response = None):
         self._json = None
         self._xml = None
         super(APIResponseWrapper, self).__init__(wrap_name, response)
@@ -44,6 +44,13 @@ class APIResponseWrapper(Wrapper):
                 raise ValueError("Response is not valid xml %s " % self.content)
         return self._xml
 
+    @property
+    def error(self):
+        """
+        Returns the wrappers error by default but can be overridden 
+        """
+        return self._wrapped.error
+ 
     def tostring(self):
         """
         If you have parsed json or xml it will
@@ -68,19 +75,21 @@ class APIRequestWrapper(Wrapper):
                         'User-Agent': 'Mozilla/5.0'
                       }
 
-    def __init__(self, wrap_name=None, base_url=None, user=None, password=None):
+    def __init__(self, wrap_name=None, base_url=None, user=None, password=None, 
+                response_wrapper = APIResponseWrapper ):
         self.base_url = base_url
         self.user = user
         self.password = password
+        self.response_wrapper = response_wrapper 
         sess = requests.session(headers = self.headers)
         super(APIRequestWrapper, self).__init__(wrap_name, sess)
         sess.auth = self.authenticate() 
     
     def authenticate(self):
         """
-        The Auth Property uses HTTPBasicAuth by defaust, but you can override
-        this property if you want to use another type or auth.  The result
-        is passed into requests.auth. 
+        The authenicate function is called in the init of APIRequestWrapper.  
+        This can be overridden for customized Authentication.  By Default
+        it will auth using HTTPBasicAuth
         """
         if self.user and self.password:
             return HTTPBasicAuth(self.user, self.password)
@@ -97,7 +106,8 @@ class APIRequestWrapper(Wrapper):
         full_url = self.base_url + url_params
         #turn the string method into a function name
         method = self._wrapped.__getattribute__(method)
-        resp = APIResponseWrapper(method(full_url, data = data, **kwargs))
+        resp = self.response_wrapper(response = method(full_url, data = data, 
+                                                       **kwargs))
         return resp
     
     def get(self, url_params = '', **kwargs):
@@ -122,7 +132,8 @@ class APIRequestWrapper(Wrapper):
 
     def clear_session(self):
         """
-        clear the cookies you have accumulated
+        clears the session and reauths
         """
-        self.sess = requests.session(headers = self.headers)
-
+        sess = requests.session(headers = self.headers)
+        self._wrapped = sess
+        self._wrapped = self.authenticate()

@@ -15,24 +15,24 @@ class TestResponseWrapper(unittest.TestCase):
 
     def test_json(self):
         self.response.content = '{"this":"is", "json":true}'
-        resp = APIResponseWrapper(self.response)
+        resp = APIResponseWrapper(response = self.response)
         self.assertEquals(json.loads(self.response.content), resp.json)
 
     def test_invalid_json(self):
         self.response.content = '{"this:"is", "json":true}'
-        resp = APIResponseWrapper(self.response)
+        resp = APIResponseWrapper(response = self.response)
         #because its a property you have to make it a function
         self.assertRaises(ValueError, lambda: resp.json, )
 
     def test_xml(self):
         self.response.content = self.XML
-        resp = APIResponseWrapper(self.response)
+        resp = APIResponseWrapper(response = self.response)
         title = resp.xml.getchildren()[0].getchildren()[0].text
         self.assertEquals(title, 'Whoops - Pivotal Tracker')
 
     def test_invalid_xml(self):
         self.response.content = self.XML[:50]
-        resp = APIResponseWrapper(self.response)
+        resp = APIResponseWrapper(response = self.response)
         self.assertRaises(ValueError, lambda: resp.xml)
         
 
