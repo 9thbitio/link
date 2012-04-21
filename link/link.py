@@ -188,6 +188,18 @@ class Wrapper(object):
     def config(self):
         return self.__link_config__
 
+    def run(self, *kargs, **kwargs):
+        """
+        by default a wrapper with a __cmd__ will be run on the command line
+        """
+        cmd = self.config().get('__cmd__')
+        if cmd:
+            p = Popen(cmd,shell=True, stdout=PIPE)
+            #print p.stdout.read()
+        else:
+            print self
+
+
 
 class Linker(object):
     """

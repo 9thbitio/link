@@ -1,0 +1,49 @@
+#!/usr/bin/env python
+"""
+A desk top virtual link that I can't quite explain yet
+"""
+import sys
+from link.vlink import vlnk
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option("-f", "--file", dest="filename", help="write report to FILE", 
+                   metavar="<file>")
+
+parser.add_option("-q", "--quiet", action="store_false", 
+                  dest="verbose", default=True,
+                  help="don't print status messages to stdout")
+
+parser.add_option("-c", "--cmd",
+                  dest="cmd", metavar="<file>",
+                  help="the vlnk command to run")
+
+
+def main():
+    """
+    Take in user input.  Start up the vlnk shell
+    """
+    (options, args) = parser.parse_args()
+
+    cmd = options.cmd
+    runcommand = vlnk.runcommand
+
+    if cmd:
+        runcommand(cmd)
+        sys.exit()
+
+    while True:
+        _input = raw_input('> ')
+        _input = _input.split(" ")
+    
+        if _input:
+            cmd = _input[0]
+            
+            if cmd == 'exit':
+                sys.exit()
+
+            runcommand(cmd, *_input[1:])
+
+
+if __name__ == '__main__':
+    main()
