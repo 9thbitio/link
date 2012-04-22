@@ -2,6 +2,7 @@ import os
 import sys
 import inspect
 from utils import load_json_file
+from subprocess import Popen
 
 class Link(object):
     """
@@ -188,14 +189,18 @@ class Wrapper(object):
     def config(self):
         return self.__link_config__
 
-    def run(self, *kargs, **kwargs):
+    def run_command(self, cmd):
+        p= Popen(cmd,shell=True)
+        p.wait()
+        return p
+
+    def __call__(self, *kargs, **kwargs):
         """
         by default a wrapper with a __cmd__ will be run on the command line
         """
         cmd = self.config().get('__cmd__')
         if cmd:
-            p = Popen(cmd,shell=True, stdout=PIPE)
-            #print p.stdout.read()
+            return self.run_command(cmd)
         else:
             print self
 
@@ -248,13 +253,19 @@ class Linker(object):
             #from the configuratian and return it
             wrap_config = {}
             if wrap_name:
-                wrap_config = self._link.config(wrap_name).copy()
+                wrap_config = self._link.config(wrap_name)
+                # if its just a string, make a wrapper that is preloaded with
+                # the string as the command.   
+                if isinstance(wrap_config, str) or isinstance(wrap_config,
+                                                              unicode):
+                    return Wrapper(__cmd__ = wrap_config)
+                
+                wrap_config = wrap_config.copy()
 
             # if they override the config then
             # update what is in the config with the 
             # parameters passed in
             if kwargs:
-                wrap_config = wrap_config.copy()
                 wrap_config.update(kwargs)
 
             # if it is here we want to remove before we pass through

@@ -93,6 +93,12 @@ class SqliteDBConnectionWrapper(DBConnectionWrapper):
         db = sqlite3.connect(self.path)
         return db
 
+    def __call__(self):
+        """
+        Run's the command line sqlite application
+        """
+        self.run_command('sqlite3 %s' % self.path)
+
 
 class MysqlDBConnectionWrapper(DBConnectionWrapper):
 
@@ -133,4 +139,11 @@ class MysqlDBConnectionWrapper(DBConnectionWrapper):
                                conv=conv)
         return conn
 
+    def __call__(self, query = None, outfile= None):
+        """
+        Create a shell connection to this mysql instance
+        """
+        cmd = 'mysql -u %s -p%s -h %s %s' % (self.user, self.password,
+                                                     self.host, self.database)
+        self.run_command(cmd)
 
