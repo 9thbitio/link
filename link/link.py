@@ -178,13 +178,20 @@ class Wrapper(object):
         wrap a special object if it exists
         """
         try:
-            ret = self.__getattribute__(name)
-        except Exception as e:
             if self._wrapped is not None:
                 return self._wrapped.__getattribute__(name)
+        except:
+            raise AttributeError("No Such Attribute in wrapper %s" % name)
+        
+        wrapper = '%s.%s' % (self.wrap_name, name)
+        try:
             if self.wrap_name:
-                return lnk('%s.%s' % (self.wrap_name, name))
-            raise e
+                return lnk(wrapper)
+        except Exception as e:
+            raise AttributeError("Error creating wrapper %s: %s" % (wrapper,
+                                 e.message))
+
+        raise AttributeError("No such attribute found %s" % name)
 
     def config(self):
         return self.__link_config__

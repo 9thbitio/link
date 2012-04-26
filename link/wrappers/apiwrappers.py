@@ -63,6 +63,10 @@ class APIResponseWrapper(Wrapper):
         if self._xml:
             return ET.tostring(self._xml)
 
+    def noauth(self):
+        """
+        """
+        pass
 
 class APIRequestWrapper(Wrapper):
     """
@@ -94,7 +98,8 @@ class APIRequestWrapper(Wrapper):
         if self.user and self.password:
             return HTTPBasicAuth(self.user, self.password)
 
-    def request(self, method='get', url_params = '' , data = '', **kwargs):
+    def request(self, method='get', url_params = '' , data = '', allow_reauth =
+                True, **kwargs):
         """
         Make a request.  This is taken care af by the request decorator
         """
@@ -108,6 +113,11 @@ class APIRequestWrapper(Wrapper):
         method = self._wrapped.__getattribute__(method)
         resp = self.response_wrapper(response = method(full_url, data = data, 
                                                        **kwargs))
+        #if you get a no auth then retry the auth
+        if allow_reauth and resp.noauth():
+            self.authenicate()
+            self.request(method, url_params, data, allow_reauth=False, **kwargs)
+
         return resp
     
     def get(self, url_params = '', **kwargs):

@@ -143,7 +143,7 @@ class MysqlDBConnectionWrapper(DBConnectionWrapper):
         """
         Create a shell connection to this mysql instance
         """
-        cmd = 'mysql -u %s -p%s -h %s %s' % (self.user, self.password,
+        cmd = 'mysql -A -u %s -p%s -h %s %s' % (self.user, self.password,
                                                      self.host, self.database)
         self.run_command(cmd)
 
