@@ -10,6 +10,7 @@ import json
 from xml.etree import cElementTree as ET
 from link import Wrapper
 from link.wrappers import APIResponseWrapper
+from link.wrappers import APIRequestWrapper
 
 class GraphiteResponseWrapper(APIResponseWrapper):
     """
@@ -40,3 +41,20 @@ class GraphiteResponseWrapper(APIResponseWrapper):
 
     def _parse_data(self,data_str):
         return [0 if elem == 'None' else float(elem) for elem in data_str.split(",")]
+
+class GraphiteRequestWrapper(APIRequestWrapper):
+    """
+    Wraps the requests class so that all you have to give is
+    extra url parameters for it to work fine
+    """
+    requests = requests
+    headers = {'Accept': '*/*',
+                        'Accept-Encoding': 'identity, deflate, compress, gzip',
+                        'User-Agent': 'Mozilla/5.0'
+                      }
+
+    def __init__(self, response_wrapper = GraphiteResponseWrapper, **kwargs):
+        super(GraphiteRequestWrapper, self).__init__(response_wrapper = response_wrapper, **kwargs)
+
+
+

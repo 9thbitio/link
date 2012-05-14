@@ -13,7 +13,7 @@ class Link(object):
     """
     __link_instance = None
 
-    GLOBAL_CONFIG = os.path.dirname(os.path.abspath(__file__)) + '/configs/link.config'
+    GLOBAL_CONFIG = os.path.dirname(os.path.abspath(__file__)) + '/config/link.config'
     USER_GLOBAL_CONFIG = '%s/.link/link.config' % os.getenv('HOME')
 
     @classmethod
