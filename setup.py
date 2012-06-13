@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from setuptools import setup
 
-VERSION = (0, 0, 4)
+VERSION = (0, 0, 5)
 NAME = 'link'
 DESCRIPTION = "Easy and consistent access to the objects you care about"
 LONG_DESCRIPTION = "Easy and consistent access to the objects you care about"
@@ -17,8 +17,15 @@ EMAIL = ''
 VERSION_STRING = '.'.join(map(str,VERSION))
 SETUP_ARGS = {}
 DATA_FILES = [('link/configs', ['link/configs/link.config'])]
-REQUIRES = ['pandas >= 0.6.0', 'numpy >= 1.6.0',
-            'requests >=0.11', 'MySQL-python'] 
+REQUIRES = ['requests >=0.11', 'MySQL-python'] 
+
+try:
+    import numpy
+    import pandas
+except:
+    print "We highly suggest you install numpy and Pandas for some functionality" 
+    print "easy_install numpy"
+    print "easy_install pandas"
 
 def write_version(filename='link/version.py'):
     """
