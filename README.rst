@@ -309,6 +309,30 @@ However, I want to open up link for others to write their own wrappers.  I saw a
 really interesting wrapper that overrides the APIRequestWrapper to make calls to
 graphite, and turns rawData=true calls into DataFrames. 
 
-Today, plugging in your own wrappers is possible, but it is clunky.  I am working on
-making this an easier process, and creating a community of powerful links to the
-resources we need. 
+
+Doesn't Exist yet
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Installing your wrappers
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Link comes with a commandline utility that you can use to install or upgrade
+your wrappers.
+
+**Install from local**
+
+If you have a python file that contains wrappers, or a full package you can
+install it on your command-line by typing::
+
+    lnk --install=<path_to_file_or_package>
+
+**Install from git**
+
+Installing from git is also easy::
+
+    lnk --install_git=<location_of_git_repo>
+
+By default these are installed into your ~/.link/wrappers directory, not to the
+entire box.  You can use the -g flag to install globally for all users, and it
+will go into the wrappers directory inside link (in python's site-packages)
+
