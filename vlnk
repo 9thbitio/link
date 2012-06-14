@@ -3,7 +3,7 @@
 A desk top virtual link that I can't quite explain yet
 """
 import sys
-from link.vlink import vlnk
+from link import lnk
 from optparse import OptionParser
 
 parser = OptionParser()
@@ -32,17 +32,17 @@ def main():
         runcommand(cmd)
         sys.exit()
 
-    while True:
-        _input = raw_input('> ')
-        _input = _input.split(" ")
+    #while True:
+        #_input = raw_input('> ')
+        #_input = _input.split(" ")
     
-        if _input:
-            cmd = _input[0]
+        #if _input:
+            #cmd = _input[0]
             
-            if cmd == 'exit':
-                sys.exit()
+            #if cmd == 'exit':
+                #sys.exit()
 
-            runcommand(cmd, *_input[1:])
+            #runcommand(cmd, *_input[1:])
 
 
 if __name__ == '__main__':
