@@ -14,11 +14,23 @@ class Link(object):
     """
     __link_instance = None
     
-    LNK_DIR = os.getenv('LNK_DIR') or ""
-    GLOBAL_CONFIG = LNK_DIR + "/link.config" 
-    USER_CONFIG_DIR = '%s/.link' % os.getenv('HOME')
-    USER_GLOBAL_CONFIG = '%s/link.config' % USER_CONFIG_DIR
+    LNK_USER_DIR =  '%s/.link' % os.getenv('HOME')
+    LNK_DIR = os.getenv('LNK_DIR') or LNK_USER_DIR
+    LNK_CONFIG = LNK_DIR + "/link.config" 
     DEFAULT_CONFIG = {"dbs":{}, "apis":{}}
+
+    @classmethod 
+    def plugins_directory(cls):
+        """
+        Tells you where the external wrapper plugins exist
+        """
+        if cls.LNK_DIR and os.path.exists(cls.LNK_DIR):
+            plugin_dir = cls.LNK_DIR + "/plugins"
+            if not os.path.exists(plugin_dir):
+                os.makedirs(plugin_dir)
+            return plugin_dir
+        
+        raise Exception("Problem creating plugins, Link directory does not exist")
 
     @classmethod
     def config_file(cls):
@@ -29,24 +41,23 @@ class Link(object):
             then check ./link.config
 
         """
-        if cls.LNK_DIR:
-            return cls.GLOBAL_CONFIG
 
         #if there is a user global then use that 
-        if os.path.exists(cls.USER_GLOBAL_CONFIG):
-            return cls.USER_GLOBAL_CONFIG
+        if os.path.exists(cls.LNK_CONFIG):
+            return cls.LNK_CONFIG
     
         # if they ore in iPython and there is no user config
         # lets create the user config for them 
         if "IPython" in sys.modules:
-            if not os.path.exists(cls.USER_CONFIG_DIR):
-                print "Creating user config dir %s " % cls.USER_CONFIG_DIR
-                os.makedirs(cls.USER_CONFIG_DIR)
-
-            new_config = open(cls.USER_GLOBAL_CONFIG, 'w')
+            if not os.path.exists(cls.LNK_DIR):
+                print "Creating user config dir %s " % cls.LNK_DIR
+                os.makedirs(cls.LNK_DIR)
+            
+            print "Creating default user config "
+            new_config = open(cls.LNK_CONFIG, 'w')
             new_config.write(json.dumps(cls.DEFAULT_CONFIG)) 
             new_config.close()
-            return cls.USER_GLOBAL_CONFIG
+            return cls.LNK_CONFIG
         
         raise Exception("""No config found.  Set environment variable LNK_DIR to
                         point to your link configuration directory or create a
@@ -214,6 +225,15 @@ class Link(object):
                 raise Exception('Wrapper cannot be found by the' +
                                 ' link class when loading: %s ' % (wrapper))
         return Wrapper
+
+    def install_plugin(self, file, install_global = False):
+
+        if install_global:
+            pass
+       
+        import shutil
+        shutil.copy(file, self.plugins_directory())
+
 
 lnk = Link.instance()
 
