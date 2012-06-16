@@ -1,6 +1,7 @@
 import os
 import sys
 import inspect
+import json
 from utils import load_json_file
 from subprocess import Popen
 
@@ -12,24 +13,44 @@ class Link(object):
     .vlink.config
     """
     __link_instance = None
-
-    GLOBAL_CONFIG = os.path.dirname(os.path.abspath(__file__)) + '/configs/link.config'
-    USER_GLOBAL_CONFIG = '%s/.link/link.config' % os.getenv('HOME')
+    
+    LNK_DIR = os.getenv('LNK_DIR') or ""
+    GLOBAL_CONFIG = LNK_DIR + "/link.config" 
+    USER_CONFIG_DIR = '%s/.link' % os.getenv('HOME')
+    USER_GLOBAL_CONFIG = '%s/link.config' % USER_CONFIG_DIR
+    DEFAULT_CONFIG = {"dbs":{}, "apis":{}}
 
     @classmethod
     def config_file(cls):
         """
         Gives you the global config based on the hierchial lookup::
 
-            first check ~/link.config
+            first check $LNK_DIR/link.config
             then check ./link.config
 
         """
-        #if there is a user global then use that instead of the framework global
+        if cls.LNK_DIR:
+            return cls.GLOBAL_CONFIG
+
+        #if there is a user global then use that 
         if os.path.exists(cls.USER_GLOBAL_CONFIG):
             return cls.USER_GLOBAL_CONFIG
+    
+        # if they ore in iPython and there is no user config
+        # lets create the user config for them 
+        if "IPython" in sys.modules:
+            if not os.path.exists(cls.USER_CONFIG_DIR):
+                print "Creating user config dir %s " % cls.USER_CONFIG_DIR
+                os.makedirs(cls.USER_CONFIG_DIR)
 
-        return cls.GLOBAL_CONFIG
+            new_config = open(cls.USER_GLOBAL_CONFIG, 'w')
+            new_config.write(json.dumps(cls.DEFAULT_CONFIG)) 
+            new_config.close()
+            return cls.USER_GLOBAL_CONFIG
+        
+        raise Exception("""No config found.  Set environment variable LNK_DIR to
+                        point to your link configuration directory or create a
+                        .link/link.config file in your HOME directory""")
 
     @classmethod
     def instance(cls):
@@ -118,10 +139,7 @@ class Link(object):
         Create a new instance of the Link.  Should be done
         through the instance() method.
         """
-        #i think if you try to set linker = Linker()
-        #here it causes an infinite loop
         self.wrappers = {}
-        self.linker = None
         self.fresh(config_file, namespace)
     
     def __getattr__(self, name):
@@ -151,15 +169,53 @@ class Link(object):
 
         return self.__config
 
-    def __call__(self, *kargs, **kwargs):
-        if not self.linker:
-            self.linker = Linker()
-        
-        return self.linker(*kargs, **kwargs)
+    def __call__(self, wrap_name=None, *kargs, **kwargs):
+        """
+        Get a wrapper given the name or some arguments
+        """
+        wrap_config = {}
 
+        if wrap_name:
+            wrap_config = self.config(wrap_name)
+            # if its just a string, make a wrapper that is preloaded with
+            # the string as the command.   
+            if isinstance(wrap_config, str) or isinstance(wrap_config, unicode):
+                return Wrapper(__cmd__ = wrap_config)
+
+            wrap_config = wrap_config.copy()
+
+        # if they override the config then update what is in the config with the 
+        # parameters passed in
+        if kwargs:
+            wrap_config.update(kwargs)
+
+        # if it is here we want to remove before we pass through
+        wrapper = self._get_wrapper(wrap_config.pop('wrapper', None))
+
+        try:
+            return wrapper(wrap_name = wrap_name, **wrap_config)
+        except TypeError as e:
+            raise Exception('Error wrapping configuration with object %s, message %s ' %
+                            (wrapper, e.message))
+
+    def _get_wrapper(self, wrapper):
+        """
+        calls back the function with a fully wrapped class
+        """
+            
+        # if they tell us what type it should be then use it
+        if wrapper:
+            try:
+                #look up the module in our wrappers dictionary
+                if not self.wrappers:
+                    self.load_wrappers()
+                return self.wrappers[wrapper]
+            except AttributeError as e:
+                raise Exception('Wrapper cannot be found by the' +
+                                ' link class when loading: %s ' % (wrapper))
+        return Wrapper
 
 lnk = Link.instance()
-
 
 class Wrapper(object):
     """
@@ -210,111 +266,6 @@ class Wrapper(object):
             return self.run_command(cmd)
         else:
             print self
-
-
-
-class Linker(object):
-    """
-    Linked Objects are ones that are linked to the Link
-    instance, which carries the global configuration
-    for the rest of the program since it is a singleton.  An
-    "Link" object shares the state of the program
-    """
-    def __init__(self, conf_key=None, wrapper_object=Wrapper):
-        self._link = Link.instance()
-        self.conf_key = conf_key
-        self.wrapper_object = wrapper_object
-
-    def configured_links(function):
-        """
-        gives you a link to your Linked Class.
-        pass
-        """
-        pass
-
-    def linker(func):
-        """
-        A linker function is one that links your configuration
-        to an actual instance of a linked object.  The key is a '.'
-        seperated list of keys to look up in the configuration.  For 
-        instance prod.dbs.mydb, it would look up this key in your
-        configuration::
-
-            {
-            "prod":
-                {"dbs":
-                    {
-                    "mydb":{
-                        "host":"<myhost>"
-                        ...
-                    }
-                }
-            }
-    
-        """
-        def get_configured_object(self, wrap_name=None, **kwargs):
-            """
-            calls back the function with a fully wrapped class
-            """
-            #if they supply a name we want to just create the object 
-            #from the configuratian and return it
-            wrap_config = {}
-            if wrap_name:
-                wrap_config = self._link.config(wrap_name)
-                # if its just a string, make a wrapper that is preloaded with
-                # the string as the command.   
-                if isinstance(wrap_config, str) or isinstance(wrap_config,
-                                                              unicode):
-                    return Wrapper(__cmd__ = wrap_config)
-                
-                wrap_config = wrap_config.copy()
-
-            # if they override the config then
-            # update what is in the config with the 
-            # parameters passed in
-            if kwargs:
-                wrap_config.update(kwargs)
-
-            # if it is here we want to remove before we pass through
-            wrapper = wrap_config.pop('wrapper', None)
-                
-            # if they tell us what type it should be then use it
-            if wrapper:
-                try:
-                    #look up the module in our wrappers dictionary
-                    if not self._link.wrappers:
-                        self._link.load_wrappers()
-                    wrapper = self._link.wrappers[wrapper]
-                except AttributeError as e:
-                    raise Exception('Wrapper cannot be found by the' +
-                                    ' link class when loading: %s ' % (wrapper))
-            else:
-                wrapper = Wrapper
-
-            try:
-                return wrapper(wrap_name = wrap_name, **wrap_config)
-            except TypeError as e:
-                raise Exception('Error wrapping configuration with object %s, message %s ' %
-                                (wrapper, e.message))
-
-            #otherwise just called the wrapped function
-            return self.wrapper_object(**kwargs)
-
-        return get_configured_object
-
-    @linker
-    def links(self, wrap = None, **kwargs):
-        """
-        Returns one or more nosewrapper
-        """
-        pass
-
-    def __call__(self, wrap_name = None, **kwargs):
-        """
-        Make it so you can call Linker(wrap) and have that return a link for the
-        configured wrap
-        """
-        return self.links(wrap_name, **kwargs)
 
 
 def install_ipython_completers():  # pragma: no cover
