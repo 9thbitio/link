@@ -32,6 +32,19 @@ class Link(object):
         
         raise Exception("Problem creating plugins, Link directory does not exist")
 
+    @classmethod 
+    def plugins_directory_tmp(cls):
+        """
+        Tells you where the external wrapper plugins exist
+        """
+        plugins = cls.plugins_directory() 
+        tmp = plugins + "/tmp"
+
+        if not os.path.exists(tmp): 
+            os.makedirs(tmp)
+
+        return tmp 
+        
     @classmethod
     def config_file(cls):
         """
@@ -226,14 +239,23 @@ class Link(object):
                                 ' link class when loading: %s ' % (wrapper))
         return Wrapper
 
-    def install_plugin(self, file, install_global = False):
-
+    def install_plugin(self, file=None, install_global = False):
+        """
+        Install the plugin in either their user plugins directory or
+        in the global plugins directory depending on what they want to do
+        """
+        print install_global
         if install_global:
-            pass
-       
-        import shutil
-        shutil.copy(file, self.plugins_directory())
+            cp_dir = os.path.dirname(__file__) + '/plugins'
+        else:  
+            cp_dir = self.plugins_directory()
 
+        import shutil
+        print "installing %s into directory %s " % ( file, cp_dir)
+        try:
+            shutil.copy(file, cp_dir )
+        except:
+            print "error moving files"
 
 lnk = Link.instance()
 

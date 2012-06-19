@@ -4,6 +4,7 @@ import sys
 import os
 from link import lnk
 from optparse import OptionParser
+from subprocess import Popen
 
 parser = OptionParser()
 
@@ -13,13 +14,24 @@ parser.add_option("-i", "--install", dest="install",
 parser.add_option("-r", "--install_git", dest="install_git",
                   help="install from git location into wrappers file")
 
-parser.add_option("-g", "--global_install", dest="global_install",
+parser.add_option("-g", "--global_install",
+                  dest="global_install",action="store_true",  default=False,
                   help="If set to global it will be installed into link in site packages")
 
 
 def get_from_git(location):
-    pass
-
+    """
+    Run git and put the data in the plugins tmp directory.  
+    From there install it
+    """
+    tmp = lnk.plugins_directory()
+    name = location.split("/")[-1].split('.')[0]
+    clone_to = '%s/%s' % (tmp, name)
+    print "getting the plugin from git and placing in %s" % clone_to
+    p = Popen("git clone %s %s" % (location ,clone_to), shell=True)
+    p.wait()
+    print "done getting file"
+    return clone_to
 
 def main():
     """
@@ -33,11 +45,9 @@ def main():
 
     if install_file:
         lnk.install_plugin(install_file, install_global)
-        
-    if install_git:
-        file = get_from_git(install_git, install_global)
-        install_wrapper(file)
-
+    elif install_git:
+        install_file = get_from_git(install_git)
+        #lnk.install_plugin(install_file, install_global)
 
 if __name__ == '__main__':
     main()
