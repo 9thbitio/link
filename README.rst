@@ -301,6 +301,51 @@ Same with mysql::
 When you exit you are right back in your ipython session, like nothing happened
 at all. 
 
+Create Lazy Commands:
+^^^^^^^^^^^^^^^^^^^^^^
+
+You can easily attach "lazy" commands to anything that you config.  These
+commands will not run if they have the same name of a function in the class
+itself.  
+
+We will use hbase and hadoop as an example.  I haven't written a wrapper for
+these yet, but i want to be able to manage the start up and shutdown of the
+hadoop and hbase servers without having to remember the command, or having to
+leave my IPython session.  You can add the following to your configuration::
+
+        "hbase":{
+            "__cmds__":{
+                "start":["$HBASE_HOME/bin/start-hbase.sh"],
+                "stop":["$HBASE_HOME/bin/stop-hbase.sh"]
+            }
+        },
+        "hadoop":{
+            "__cmds__":{
+                "start":["$HADOOP_HOME/bin/start-all.sh"],
+                "stop":["$HADOOP_HOME/bin/stop-all.sh"]
+            }
+        }
+
+In the IPython I can easily start and stop hadoop and hbase::
+
+    In [9]: hbase = lnk.dbs.hbase
+
+    In [3]: hbase.<hit tab>
+    hbase.commander    hbase.config       hbase.run_command  hbase.start
+    hbase.stop         hbase.wrap_name
+    
+    #start it up
+    In [4]: hbase.start 
+    home.lei.local: ssh: Could not resolve hostname home.lei.local: nodename nor
+    servname provided, or not known
+    starting master, logging to
+    /var/hbase/logs/hbase-master.local.out
+    nohup: can't detach from console: Inappropriate ioctl for device
+    localhost: starting regionserver, logging to
+    /var/hbase/bin/../logs/hbase-regionserver.local.out
+    
+    In [5]:
+
 Create your Own Links with Custom Wrappers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
