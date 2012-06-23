@@ -5,6 +5,28 @@ import json
 from utils import load_json_file
 from subprocess import Popen
 
+class Commander(object):
+    """
+    Given a dictionary of commands the commander can run them very easily
+    """
+    def __init__(self, commands):
+        self.commands = commands
+
+    def run_command(self, name = "__default__", **kwargs):
+        """
+        Run the command in your command dictionary
+        """
+        if self.commands:
+            cmd = self.commands.get(name)
+            if cmd:
+                p= Popen(cmd,shell=True)
+                p.wait()
+                return p
+
+        raise(Exception("No such command %s " % name))
+
+       
+
 class Link(object):
     """
     Link is a singleton that keeps all configuration for the program. It is
@@ -155,6 +177,7 @@ class Link(object):
  
         self.__config_file = config_file
         self.__config = load_json_file(config_file)
+        self._commander = self.__config.get('__cmds__')
         self.namespace = namespace
         self.wrappers = {}
 
@@ -175,7 +198,7 @@ class Link(object):
             except:
                 raise Exception('Link has no attribute %s and none is configured'
                                 % name)
-
+    
     def config(self, config_lookup = None):
         """
         If you have a conf_key then return the
@@ -244,7 +267,6 @@ class Link(object):
         Install the plugin in either their user plugins directory or
         in the global plugins directory depending on what they want to do
         """
-        print install_global
         if install_global:
             cp_dir = os.path.dirname(__file__) + '/plugins'
         else:  
@@ -268,6 +290,9 @@ class Wrapper(object):
     def __init__(self, wrap_name = None, wrapped_object=None, **kwargs):
         self.wrap_name = wrap_name
         self._wrapped = wrapped_object
+        self.commander = Commander(kwargs.get("__cmds__"))
+        #you want to prefer the wrappers native functions
+        #kwargs.update(self.__dict__)
         self.__dict__['__link_config__'] = kwargs
         #self._link = Link.instance()
     
@@ -275,12 +300,28 @@ class Wrapper(object):
         """
         wrap a special object if it exists
         """
+
+        #first look for a wrapper item named that
+        if name in self.__dict__:
+            return self.__getatribute__(name)
         try:
             if self._wrapped is not None:
                 return self._wrapped.__getattribute__(name)
         except:
             raise AttributeError("No Such Attribute in wrapper %s" % name)
         
+        if self.commander.commands:
+            cmd = self.commander.commands.get(name)
+            if cmd:
+                return self.commander.run_command(name)
+
+        try:
+            if self._wrapped is not None:
+                return self._wrapped.__getattribute__(name)
+        except:
+            raise AttributeError("No Such Attribute in wrapper %s" % name)
+        
+
         wrapper = '%s.%s' % (self.wrap_name, name)
         try:
             if self.wrap_name:
@@ -303,11 +344,22 @@ class Wrapper(object):
         """
         by default a wrapper with a __cmd__ will be run on the command line
         """
-        cmd = self.config().get('__cmd__')
-        if cmd:
-            return self.run_command(cmd)
+        #run the command specified by the first param, else run the default
+        #cammond
+        if kargs and len(kargs)>0:
+            command_name = kargs[0]
         else:
-            print self
+            command_name = "__default__"
+        
+        try:
+            return self.commander.run_command(command_name)
+        except Exception as e:
+            raise e 
+            if command_name=="__default__":
+                message = "This wrapper is not callable, no default command set"
+            else:
+                message = "No command set for %s" % command_name
+            raise(Exception(message))
 
 
 def install_ipython_completers():  # pragma: no cover
@@ -322,9 +374,14 @@ def install_ipython_completers():  # pragma: no cover
         Add in all the methods of the _wrapped object so its
         visible in iPython as well
         """
-        obj_members = inspect.getmembers(obj._wrapped)
-        return (prev_completions + [c[0] for c in obj_members] + 
-                [c for c in obj.config().keys()])
+        if obj._wrapped:
+            obj_members = inspect.getmembers(obj._wrapped)
+            prev_completions+=[c[0] for c in obj_members]
+
+        prev_completions+=[c for c in obj.config().keys()] 
+        prev_completions+=[command for command in obj.commander.commands.keys()]
+
+        return prev_completions
 
     @complete_object.when_type(Link)
     def complete_link(obj, prev_completions):
