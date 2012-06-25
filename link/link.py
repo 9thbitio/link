@@ -12,19 +12,46 @@ class Commander(object):
     def __init__(self, commands):
         self.commands = commands
 
-    def run_command(self, name = "__default__", **kwargs):
+    def has_command(self, name):
+        """
+        Returns true if this commander has a command by this name
+        """
+        return self.commands.has_key(name)
+
+    def run_command(self, name = "__default__", *kargs, **kwargs):
         """
         Run the command in your command dictionary
         """
+        if not self.has_command(name):
+            name = "__default__"
+
         if self.commands:
+            #make a copy of the arra
             cmd = self.commands.get(name)
             if cmd:
+                if not isinstance(cmd, list):
+                    cmd = [cmd]
+                #make a copy of it so you don't change it
+                else:
+                    cmd = cmd[:]
+
+                cmd.extend(map(str,kargs))
+                cmd = " ".join(cmd)
                 p= Popen(cmd,shell=True)
                 p.wait()
                 return p
 
         raise(Exception("No such command %s " % name))
+    
+    def command(self, name=None):
+        """
+        Returns the command function that you can pass arguments into
+        """
+        def runner(*kargs, **kwargs):
+            return self.run_command(name,*kargs, **kwargs)
 
+        return runner
+        
        
 
 class Link(object):
@@ -313,7 +340,8 @@ class Wrapper(object):
         if self.commander.commands:
             cmd = self.commander.commands.get(name)
             if cmd:
-                return self.commander.run_command(name)
+                #return the command function which they then have to call
+                return self.commander.command(name)
 
         try:
             if self._wrapped is not None:
@@ -346,13 +374,16 @@ class Wrapper(object):
         """
         #run the command specified by the first param, else run the default
         #cammond
-        if kargs and len(kargs)>0:
+        run_parameters = []
+        if kargs and len(kargs)>0 and self.commander.has_command(kargs[0]):
             command_name = kargs[0]
+            run_parameters = kargs[1:]
         else:
             command_name = "__default__"
+            run_parameters = kargs[:]
         
         try:
-            return self.commander.run_command(command_name)
+            return self.commander.run_command(command_name, *run_parameters)
         except Exception as e:
             raise e 
             if command_name=="__default__":
