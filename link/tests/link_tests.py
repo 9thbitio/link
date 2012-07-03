@@ -87,6 +87,18 @@ class TestLink(unittest.TestCase):
         lnk.load_wrapper_packages([FAKE_WRAPPER_PACKAGE2])
         self.assertTrue(lnk.wrappers.has_key('FakeWrapper2'))
 
+class TestLazyFunctions(unittest.TestCase):
+
+    def setUp(self):
+        #reset the config every time to config1
+        lnk.fresh(config_file=config1_path)
+
+    def test_function_lookup(self):
+        func = lnk.lazy_functions.test_function
+        self.assertTrue(func.commander.has_command("__default__"))
+        self.assertTrue(func.commander.has_command("function"))
+        self.assertFalse(func.commander.has_command("aeuoaeaosuoesth"))
+        
 
 class TestWrapper(unittest.TestCase):
     pass
