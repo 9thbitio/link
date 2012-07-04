@@ -35,6 +35,12 @@ def get_from_git(location):
     print "done getting file"
     return clone_to
 
+class ShCmd(object):
+
+    def __init__(self, command, directory):
+        self.command = command
+        self.directory = directory
+
 class LnkSh(object):
     """
     lnk shell class.  Allows you to call either a shell command or
@@ -82,11 +88,25 @@ class LnkSh(object):
         """
         self.shell_commands = {}
         command_dirs = self.path.split(":")
+        #you want to look them up backwords so that commands in the beginning of
+        #the path overwrite the ones in the back
+        # PATH=/usr/bin:/usr/local/bin
+        # we want to prefer those in /usr/bin
+        command_dirs.reverse()
         #get all the commands
         commands = [os.listdir(dir) for dir in command_dirs] 
-        print zipcommands
-        #now get netstats for them
-        return commands
+        commands = zip(commands, command_dirs)
+        final_commands = []
+        for cmds, dir in commands:
+            final_commands.extend(
+                [(cmd, dir) for cmd in cmds 
+                    if os.access('%s/%s' % (dir, cmd), os.X_OK)]
+            )
+        
+        #return an indexed map
+        #this is where the overwritting hoppens.  dict creation prefers the
+        #second instance
+        return dict([(cmd, ShCmd(cmd, dir)) for cmd, dir in final_commands])
     
     def lookup_shell(self, command):
         """
@@ -95,7 +115,6 @@ class LnkSh(object):
             self.shell_commands = self.get_shell_commands()
 
         print self.shell_commands
-
 
     def __call__(self, command, options=None):
         """
@@ -110,6 +129,7 @@ class LnkSh(object):
                         )
         
         self.lookup_shell("thaseu")
+        #TODO: Take care of aliases
         print _options
         print command
     
