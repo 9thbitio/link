@@ -148,6 +148,7 @@ class Link(object):
         try:
             wrapper_mod = __import__(mod_or_package, fromlist = ['*'])
         except ImportError as e:
+            raise e
             raise ImportError("No such wrapper in the PYTHONPATH: %s" %
                               e.message)
         #get all classes by name and put them into a dictionary
@@ -355,6 +356,7 @@ class Wrapper(object):
             if self.wrap_name:
                 return lnk(wrapper)
         except Exception as e:
+            raise e
             raise AttributeError("Error creating wrapper %s: %s" % (wrapper,
                                  e.message))
 
