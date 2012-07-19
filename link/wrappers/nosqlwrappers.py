@@ -27,14 +27,14 @@ class NoSqlConnectionWrapper(Wrapper):
             return self.table
         raise Exception("No table defined or no default table")
 
-    def get(self, row, table=None):
+    def get(self, key, table=None):
         """
         get the row or rows from a table (could do cool things with rows by
         allowing for regex or searches
         """
         pass
     
-    def put(self, key, table):
+    def put(self, key, column, value, table=None):
         """
         put a key or keys back to the nosqldb
         """
@@ -66,7 +66,10 @@ class HbaseNoSqlConnectionWrapper(NoSqlConnectionWrapper):
     """
     A connection wrapper for a sqlite database
     """
-    def __init__(self, wrap_name=None, host=None, table=None):
+    import happybase 
+    #from hbase import Hbase 
+
+    def __init__(self, wrap_name=None, host=None):
         """
         A connection for a SqlLiteDb.  Requires that sqlite3 is
         installed into python
@@ -74,6 +77,7 @@ class HbaseNoSqlConnectionWrapper(NoSqlConnectionWrapper):
         :param host: the host:port of the hbase thrift server
         """
         (self.host, self.port) = self._host_to_hostport(host)
+        
         # TODO: Where would one configure the default port for link
         super(HbaseNoSqlConnectionWrapper, self).__init__(wrap_name=wrap_name)
 
@@ -82,31 +86,40 @@ class HbaseNoSqlConnectionWrapper(NoSqlConnectionWrapper):
         Override the create_connection from the DbConnectionWrapper
         class which get's called in it's initializer
         """
-        from thrift.transport.TSocket import TSocket
-        from thrift.transport.TTransport import TBufferedTransport
-        from thrift.protocol import TBinaryProtocol
-        from hbase import Hbase 
+        #from thrift.transport.TSocket import TSocket
+        #from thrift.transport.TTransport import TBufferedTransport
+        #from thrift.protocol import TBinaryProtocol
+        #from hbase import Hbase 
 
-        transport = TBufferedTransport(TSocket(self.host,self.port))
-        transport.open()
-        protocol = TBinaryProtocol.TBinaryProtocol(transport)
+        #transport = TBufferedTransport(TSocket(self.host,self.port))
+        #transport.open()
+        #protocol = TBinaryProtocol.TBinaryProtocol(transport)
 
-        return Hbase.Client(protocol)
+        return self.happybase.Connection(self.host, port=self.port)
 
-    def get(self, row, table=None):
-        """
-        get the row or rows from a table (could do cool things with rows by
-        allowing for regex or searches
-        """
-        table = self.get_current_table(table)
-        return self._wrapped.getRow(table, row)
+    #def increment(self, row, column, amount=1, table=None):
+        #"""
+        #Increment a column by some amount
+        #"""
+        #table = self.get_current_table(table)
+        #self._wrapped.atomicIncrement(table, row, column, amount)
+
+    #def get(self, row, columns=None, table=None):
+        #"""
+        #get the row or rows from a table (could do cool things with rows by
+        #allowing for regex or searches
+        #"""
+        #table = self.get_current_table(table)
+        #return self._wrapped.getRowWithColumns(table, row, columns=columns)
     
-    def put(self, key, table):
-        """
-        put a key or keys back to the nosqldb
-        """
-        table = self.get_current_table(table)
-        return self._wrapped.getRow
+    #def put(self, row, column, value, table=None):
+        #"""
+        #put a key or keys back to the nosqldb.  Should support dictionary
+        #updates or multiple mutations
+        #"""
+        #table = self.get_current_table(table)
+        #mutation = self.Hbase.Mutation(column=column,value=value)
+        #return self._wrapped.mutateRow(table, row, [mutation])
 
     def __call__(self):
         """
