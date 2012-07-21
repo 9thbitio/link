@@ -1,5 +1,12 @@
+#from flask import Flask
+from functools import wraps
 from link import Wrapper
 import json
+
+#app = Flask(__name__)
+
+def response(*kargs, **kwargs):
+    return Response(*kargs, **kwargs)
 
 class Response(Wrapper):
     """
@@ -7,8 +14,12 @@ class Response(Wrapper):
     format
     An API style response 
     """
-    def __init__(self, response=None, warnings = None,
+    def __init__(self, routes, methods = ['GET'],  response=None, warnings = None,
                  error = None, wrap_name=None):
+
+        print "here"
+        self.routes = routes
+        self.methods = methods
         self.response = response
 
         self.warnings = []
@@ -22,16 +33,27 @@ class Response(Wrapper):
         """
         Return a function because this is a decorator
         """
+        print func
+        print self.__str__
+        print self.routes
+        @wraps
+        #@app.route(self.routes, methods = self.methods)
         def respond(*kargs, **kwargs):
             """
             Gives itself as a parameter so that you can set the return value
             """
+            print self.__str__
+            print self.response
+            #print app.__dict__
+            #print func.__name__
+            #print kargs
+            #print kwargs
             try:
-                func(*kargs, response = self,  **kwargs)
+                func(response = self,  **kwargs)
             except Exception as e:
                 self.error = "ERROR - %s " % e.message
 
-            return self
+            return str(self)
 
         return respond
 
@@ -52,13 +74,17 @@ class Response(Wrapper):
         """
         returns it as a dictinory
         """
-        response = {'response':self.response}
+        response = {}
+        if self.response:
+            response['response'] = self.response
 
         if self.warnings:
             response['warnings'] = self.warnings
  
         if self.error:
             response['error'] = self.error
+        else:
+            response['status'] = 'OK'
 
         return response
     
@@ -68,4 +94,3 @@ class Response(Wrapper):
         """
         return json.dumps(self.dict) 
     
-
