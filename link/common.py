@@ -6,7 +6,11 @@ class Node(object):
     """
     def __init__(self, data = None, key=None, hierarchy = None, rules = None):
         self.key = key 
-        self.hierarchy = hierarchy 
+
+        self.hierarchy = hierarchy
+        if hierarchy == None:
+            self.hierarchy = []
+
         self.data = data
         super(Node, self).__init__()
 
@@ -92,20 +96,6 @@ class APIEncoder(json.JSONEncoder):
 
     def encode(self, obj):
 
-        #if isinstance(obj, APIResponse):
-            #obj_new = {}
-
-            #if self.response:
-                #obj_new['response'] = self.response
-
-            #if self.error:
-                #obj_new['error'] = self.error
-            #else:
-                #obj_new['status'] = 'ok'
-
-            #if selfwarnings:
-                #obj_new['warnings'] =  self.warnings
-            
         return super(APIEncoder, self).encode(obj)
 
 class APIObject(Node):
@@ -119,27 +109,6 @@ class APIObject(Node):
         self._json = json
         super(APIObject, self).__init__(json, key, hierarchy)
     
-    @property 
-    def json(self):
-        return self._json
-
-    def __getitem__(self, name):
-        try:
-            return self.json[name]
-        except:
-            raise Exception('no json stored in this APIObject or API Response')
-    
-    def get(self, name):
-        return self._json.get(name)
-
-    def __str__(self):
-        return json.dumps(self.json, cls = APIEncoder)
-
-
-class APIResponse(APIObject):
-    """
-    Used to help make standardized Json responses to API's
-    """
     @classmethod
     def api_object(cls):
         cls._name = cls.__name__.lower() 
@@ -152,6 +121,33 @@ class APIResponse(APIObject):
         """
         return self.api_object()
 
+    @property 
+    def json(self):
+        return self._json
+
+    def __getitem__(self, name):
+        try:
+            return self.json[name]
+        except:
+            raise Exception('no json stored in this APIObject or API Response')
+
+    def __iter__(self):
+        return self.json.__iter__()
+    
+    def get(self, name):
+        return self.json.get(name)
+
+    def __str__(self):
+        return json.dumps(self.json, cls = APIEncoder)
+
+    def __getitem__(self, key):
+        return self.json[key]
+
+
+class APIResponse(APIObject):
+    """
+    Used to help make standardized Json responses to API's
+    """
     def __init__(self, response = None, warnings = None, error = None, key = None,
                  hierarchy = None, data = None):
         self._response = response
@@ -159,11 +155,8 @@ class APIResponse(APIObject):
         self.error = error
         super(APIObject, self).__init__(data, key, hierarchy)
 
-    def __getitem__(self, name):
-        return self.response[name]
-
-    def __iter__(self):
-        return self.response.__iter__()
+    def __getitem__(self, key):
+        return self.response[key]
     
     def iteritems(self):
         return self.response.iteritems()
