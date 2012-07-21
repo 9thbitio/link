@@ -42,7 +42,7 @@ class Single(object):
         if not cls._instance:
             cls._instance = super(Single, cls).__new__(
                 cls, *args, **kwargs)
-            return cls._instance
+        return cls._instance
 
 class Data(Single):
     """
@@ -52,6 +52,7 @@ class Data(Single):
         self.table = table
         self.data = data
         self.query = query
+        super(Data, self).__init__()
 
     def __call__(self):
         print self.table
@@ -139,6 +140,18 @@ class APIResponse(APIObject):
     """
     Used to help make standardized Json responses to API's
     """
+    @classmethod
+    def api_object(cls):
+        cls._name = cls.__name__.lower() 
+        return cls._name
+
+    @property
+    def _name(self):
+        """
+        Only get's called the first time, then it is cached in self.NAME
+        """
+        return self.api_object()
+
     def __init__(self, response = None, warnings = None, error = None, key = None,
                  hierarchy = None, data = None):
         self._response = response
@@ -149,6 +162,12 @@ class APIResponse(APIObject):
     def __getitem__(self, name):
         return self.response[name]
 
+    def __iter__(self):
+        return self.response.__iter__()
+    
+    def iteritems(self):
+        return self.response.iteritems()
+
     @property
     def json(self):
         """
@@ -157,7 +176,7 @@ class APIResponse(APIObject):
         _json = {}
 
         if self.response:
-            _json['response'] = self.response
+            _json['response'] = { self._name: self.response }
 
         if self.error:
             _json['error'] = self.error
@@ -171,4 +190,4 @@ class APIResponse(APIObject):
 
     @property
     def response(self):
-        return _response
+        return self._response
