@@ -158,6 +158,9 @@ class APIResponse(APIObject):
     def __getitem__(self, key):
         return self.response[key]
     
+    def get(self, key):
+        return self.response.get(key)
+ 
     def iteritems(self):
         return self.response.iteritems()
 
