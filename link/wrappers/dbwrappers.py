@@ -1,6 +1,57 @@
 from link import Wrapper
 from link.utils import list_to_dataframe
 
+class DBCursorWrapper(Wrapper):
+    """
+    Wraps a select and makes it easier to tranform the data
+    """
+    def __init__(self, cursor, wrap_name = None):
+        self.cursor = cursor
+        self._data = None
+        self._columns = None
+        super(DBCursorWrapper, self).__init__(wrap_name, cursor)
+    
+    @property
+    def columns(self):
+        if not self._columns:
+            self._columns = [x[0].lower() for x in self.cursor.description]
+        return self._columns
+    
+    @property
+    def data(self):
+        if not self._data:
+           self._data = self.cursor.fetchall() 
+        return self._data
+
+    def as_dataframe(self):
+        try:
+            from pandas import DataFrame
+        except:
+            raise Exception("pandas required to select dataframe. Please install"  + 
+                            "sudo easy_install pandas")
+        columns = self.columns
+        #check to see if they have duplicate column names
+        if len(columns)>len(set(columns)):
+            raise Exception("Cannot have duplicate column names " +
+                            "in your query %s, please rename" % columns)
+        return list_to_dataframe(self.data, columns) 
+    
+    def _create_dict(self, row):
+        return dict(zip(self.columns, row)) 
+
+    def as_dict(self):
+        return map(self._create_dict,self.data)
+
+    def __iter__(self):
+        return self.data.__iter__()
+    
+    def __call__(self, query):
+        """
+        Creates a cursor and executes the query for you
+        """
+        self.cursor.execute(query)
+        return self
+
 class DBConnectionWrapper(Wrapper):
     """
     wraps a database connection and extends the functionality
@@ -51,9 +102,12 @@ class DBConnectionWrapper(Wrapper):
         is better to use select_dataframe if you want to do data manipulation
         on the results
         """
-        cursor = self.execute(query)
-        data = cursor.fetchall()
-        return data
+        cursor = self._wrapped.cursor()
+        return DBCursorWrapper(cursor)(query)
+ 
+        #cursor = self.execute(query)
+        #data = cursor.fetchall()
+        #return data
  
     def create_connection(self):
         """

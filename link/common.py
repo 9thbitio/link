@@ -171,7 +171,7 @@ class APIResponse(APIObject):
         """
         _json = {}
 
-        if self.response:
+        if self.response!=None:
             _json['response'] = { self._name: self.response }
 
         if self.error:
