@@ -13,6 +13,13 @@
             "path": "test_db.sqlite"
         }
     },
+    "test_wrapper": {
+        "__cmds__": {
+            "test_command": "/usr/bin/ls",
+            "path": "test_db.sqlite"
+        }
+ 
+    },
     "apis": {
         "test_api": {
             "base_url": "test_url",

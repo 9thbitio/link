@@ -5,12 +5,40 @@ import json
 from utils import load_json_file
 from subprocess import Popen
 
+#this get's the current directory of link
+lnk_dir = os.path.split(os.path.abspath(__file__))[0]
+
 class Commander(object):
     """
     Given a dictionary of commands the commander can run them very easily
     """
-    def __init__(self, commands):
-        self.commands = commands
+    def __init__(self, commands=None, base_dir = ''):
+        
+        self.base_dir = base_dir
+        self.commands = {}
+        
+        if commands:
+            self.commands = commands
+        elif not commands and self.base_dir:
+            self.commands = dict([(key,key) for key in self.list_base_dir()])
+        else:
+            self.commands = {}
+
+    
+    def set_base_dir(self, base_dir):
+        """
+        set the base dir which will uncache the commands it has stored
+        """
+        self.base_dir = base_dir
+
+    def list_base_dir(self):
+        """
+        list what is in the base_dir, nothing if doesnt exist
+        """
+        try:
+            return os.listdir(self.base_dir)
+        except:
+            return []
 
     def has_command(self, name):
         """
@@ -18,16 +46,18 @@ class Commander(object):
         """
         return self.commands.has_key(name)
 
-    def run_command(self, name = "__default__", *kargs, **kwargs):
+    def run_command(self, name = "__default__", base_dir='', *kargs, **kwargs):
         """
         Run the command in your command dictionary
         """
-        if not self.has_command(name):
-            name = "__default__"
+        if not base_dir:
+            base_dir = self.base_dir 
 
+        print self.commands
         if self.commands:
             #make a copy of the arra
             cmd = self.commands.get(name)
+            print cmd
             if cmd:
                 if not isinstance(cmd, list):
                     cmd = [cmd]
@@ -36,7 +66,8 @@ class Commander(object):
                     cmd = cmd[:]
 
                 cmd.extend(map(str,kargs))
-                cmd = " ".join(cmd)
+                cmd = '%s/%s' % (base_dir, "/".join(cmd))
+                print cmd
                 p= Popen(cmd,shell=True)
                 p.wait()
                 return p
@@ -206,6 +237,7 @@ class Link(object):
         self.__config_file = config_file
         self.__config = load_json_file(config_file)
         self._commander = self.__config.get('__cmds__')
+        self._commander = self.__config.get('__scripts__')
         self.namespace = namespace
         self.wrappers = {}
 
@@ -224,6 +256,7 @@ class Link(object):
             try:
                 return self(wrap_name = name, **self.__config[name].copy())
             except:
+                raise e
                 raise Exception('Link has no attribute %s and none is configured'
                                 % name)
     
@@ -314,21 +347,25 @@ class Wrapper(object):
     The wrapper wraps a piece of the configuration.  
     """
     _wrapped = None
+    cmdr = None
 
     def __init__(self, wrap_name = None, wrapped_object=None, **kwargs):
         self.wrap_name = wrap_name
         self._wrapped = wrapped_object
+
         self.commander = Commander(kwargs.get("__cmds__"))
-        #you want to prefer the wrappers native functions
-        #kwargs.update(self.__dict__)
+        self.lnk_script_commander = Commander(base_dir =
+                                         '%s/scripts' % lnk_dir)
+        self.script_commander = Commander(base_dir =
+                                         '%s/scripts' % os.getcwd())
+        self.cmdr = self.script_commander
+        self.loaded = True
         self.__dict__['__link_config__'] = kwargs
-        #self._link = Link.instance()
     
     def __getattr__(self, name):
         """
         wrap a special object if it exists
         """
-
         #first look for a wrapper item named that
         if name in self.__dict__:
             return self.__getatribute__(name)
@@ -337,62 +374,86 @@ class Wrapper(object):
                 return self._wrapped.__getattribute__(name)
         except:
             raise AttributeError("No Such Attribute in wrapper %s" % name)
-        
-        if self.commander.commands:
-            cmd = self.commander.commands.get(name)
-            if cmd:
-                #return the command function which they then have to call
-                return self.commander.command(name)
-
+       
         try:
             if self._wrapped is not None:
                 return self._wrapped.__getattribute__(name)
         except:
             raise AttributeError("No Such Attribute in wrapper %s" % name)
-        
-
-        wrapper = '%s.%s' % (self.wrap_name, name)
-        try:
-            if self.wrap_name:
-                return lnk(wrapper)
-        except Exception as e:
-            raise e
-            raise AttributeError("Error creating wrapper %s: %s" % (wrapper,
-                                 e.message))
+            
+        # i'm not sure I have to do the loaded thing
+        if self.loaded:
+            #try the command, if its nothing than try the wrapper
+            cmd = self(name)
+            if cmd:
+                return cmd
+            else:
+                wrapper = '%s.%s' % (self.wrap_name, name)
+                try:
+                    if self.wrap_name:
+                        return lnk(wrapper)
+                except Exception as e:
+                    raise e
+                    raise AttributeError("Error creating wrapper %s: %s" % (wrapper,
+                                         e.message))
 
         raise AttributeError("No such attribute found %s" % name)
 
     def config(self):
         return self.__link_config__
 
-    def run_command(self, cmd):
-        p= Popen(cmd,shell=True)
-        p.wait()
-        return p
+    def command(self, name, args=None, commander=None, base_dir=None):
+        """
+        Run a command for a commander
+        """
+        # default to the script commander as default behavior
+        # need to k
+        if not commander:
+            commander = self.cmdr
+        
+        base_dir = base_dir or ''
+        print "here"
+        print commander
+        print name
+        run_parameters = []
+        if args and isinstance(args, list): 
+            run_parameters = args[1:]
+        try:
+            return commander.run_command(name, *run_parameters,
+                                         base_dire=base_dir)
+        except Exception as e:
+            print e
+            return None
 
     def __call__(self, *kargs, **kwargs):
         """
         by default a wrapper with a __cmd__ will be run on the command line
+
+        prefer configured commands in $LNK_HOME/link.config,
+        then lnk scripts (in <lnk_dir>/scripts, then user scripts (cwd scripts)
         """
         #run the command specified by the first param, else run the default
         #cammond
-        run_parameters = []
-        if kargs and len(kargs)>0 and self.commander.has_command(kargs[0]):
-            command_name = kargs[0]
-            run_parameters = kargs[1:]
-        else:
-            command_name = "__default__"
-            run_parameters = kargs[:]
-        
-        try:
-            return self.commander.run_command(command_name, *run_parameters)
-        except Exception as e:
-            raise e 
-            if command_name=="__default__":
-                message = "This wrapper is not callable, no default command set"
-            else:
-                message = "No command set for %s" % command_name
-            raise(Exception(message))
+        print self.script_commander.has_command(kargs[0])
+        if kargs and len(kargs)>0:
+
+            if self.commander.has_command(kargs[0]):
+                return self.command(kargs[0], kargs[1:],  
+                                        commander = self.commander)
+
+            elif self.lnk_script_commander.has_command(kargs[0]):
+                return self.command(kargs[0], kargs[1:], commander =
+                                    self.lnk_script_commander)
+
+            #TODO: this won't work if they are moving aronud
+            # we don't know what possible commands there are
+            elif self.script_commander.has_command(kargs[0]):
+                return self.command(kargs[0], kargs[1:], commander =
+                                    self.script_commander, base_dir =
+                                    os.getcwd())
+
+        return None
+
 
 
 def install_ipython_completers():  # pragma: no cover
@@ -413,6 +474,8 @@ def install_ipython_completers():  # pragma: no cover
 
         prev_completions+=[c for c in obj.config().keys()] 
         prev_completions+=[command for command in obj.commander.commands.keys()]
+        prev_completions+=[command for command in obj.script_commander.commands.keys()]
+        prev_completions+=[command for command in obj.lnk_script_commander.commands.keys()]
 
         return prev_completions
 

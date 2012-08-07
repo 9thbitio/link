@@ -101,7 +101,28 @@ class TestLazyFunctions(unittest.TestCase):
         
 
 class TestWrapper(unittest.TestCase):
-    pass
+
+    def setUp(self):
+        lnk.fresh(config_file=config1_path)
+        self.wrapper = lnk.test_wrapper
+    
+    def test_link_scripts(self):
+        ran = self.wrapper('test_script')
+        self.assertTrue(ran!=None)
+
+    def test_link_commands(self):
+        ran = self.wrapper('test_command')
+        self.assertTrue(ran!=None)
+
+    def test_link_cwd_scripts(self):
+        """
+        test that you can run scripts in the current working directory.  you
+        must be in a directory where scripts/test_local_scripts exists 
+        """
+        ran = self.wrapper('test_cwd_script')
+        self.assertTrue(ran!=None)
+
+
 
 if __name__ == '__main__':
     import nose

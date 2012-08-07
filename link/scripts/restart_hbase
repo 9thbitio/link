@@ -1,0 +1,7 @@
+source ~/.bash_profile
+hbase-daemon.sh stop thrift -p 9090
+stop_hbase
+$HBASE_HOME/bin/stop-hbase.sh
+sleep 3
+$HBASE_HOME/bin/start-hbase.sh
+hbase-daemon.sh start thrift -p 9090
