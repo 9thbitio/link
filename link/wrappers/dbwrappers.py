@@ -5,10 +5,11 @@ class DBCursorWrapper(Wrapper):
     """
     Wraps a select and makes it easier to tranform the data
     """
-    def __init__(self, cursor, wrap_name = None):
+    def __init__(self, cursor, query = None, wrap_name = None):
         self.cursor = cursor
         self._data = None
         self._columns = None
+        self.query = query
         super(DBCursorWrapper, self).__init__(wrap_name, cursor)
     
     @property
@@ -45,10 +46,12 @@ class DBCursorWrapper(Wrapper):
     def __iter__(self):
         return self.data.__iter__()
     
-    def __call__(self, query):
+    def __call__(self, query = None):
         """
         Creates a cursor and executes the query for you
         """
+        if not query:
+            query = self.query
         self.cursor.execute(query)
         return self
 
@@ -96,14 +99,14 @@ class DBConnectionWrapper(Wrapper):
                             "in your query %s, please rename" % columns)
         return list_to_dataframe(data, columns) 
     
-    def select(self, query):
+    def select(self, query=None):
         """
         Run a select and just return everything. If you have pandas installed it
         is better to use select_dataframe if you want to do data manipulation
         on the results
         """
         cursor = self._wrapped.cursor()
-        return DBCursorWrapper(cursor)(query)
+        return DBCursorWrapper(cursor, query)()
  
         #cursor = self.execute(query)
         #data = cursor.fetchall()

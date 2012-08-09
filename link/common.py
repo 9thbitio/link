@@ -83,20 +83,24 @@ class Actions(object):
         self.query = query
         super(Actions, self).__init__()
 
+
 class APIEncoder(json.JSONEncoder):
     """
     The json encoder we will use for our APIs
     """
 
     def default(self, obj):
+        #Need to do type == not isinstance()
         if isinstance(obj, APIObject):
-            return obj.json
+            if isinstance(obj, APIResponse):
+                return obj.response
+            return obj.message
 
         return super(APIEncoder, self).encode(obj)
 
     def encode(self, obj):
-
         return super(APIEncoder, self).encode(obj)
+
 
 class APIObject(Node):
     """
@@ -105,21 +109,17 @@ class APIObject(Node):
     The key is really a key_tail.  It does not need to have a hierarchy
 
     """
-    def __init__(self, json = None, key = None, hierarchy = None ):
-        self._json = json
-        super(APIObject, self).__init__(json, key, hierarchy)
+
+    def __init__(self, message = None, warnings = None ,
+                error = None, key = None):
+        self._message = message
+        self.error = error
+        self.warnings = warnings
+        super(APIObject, self).__init__(json)
     
     @classmethod
-    def api_object(cls):
-        cls._name = cls.__name__.lower() 
-        return cls._name
-
-    @property
-    def _name(self):
-        """
-        Only get's called the first time, then it is cached in self.NAME
-        """
-        return self.api_object()
+    def api_object_name(cls):
+        return cls.__name__.lower() 
 
     @property 
     def json(self):
@@ -138,22 +138,49 @@ class APIObject(Node):
         return self.json.get(name)
 
     def __str__(self):
-        return json.dumps(self.json, cls = APIEncoder)
+        return json.dumps(self.message , cls = APIEncoder)
 
     def __getitem__(self, key):
         return self.json[key]
+
+    @property
+    def response(self):
+        _json = {}
+
+        #if there is an error don't continue
+        if self.error:
+            _json['error'] = self.error
+            return _json
+        
+        _json['status'] = 'ok'
+
+        if self.message!=None:
+            _json['response'] = self.message 
+
+        if self.warnings:
+            _json['warnings'] =  self.warnings
+
+        return _json
+
+    @property
+    def message(self):
+        return self._message
 
 
 class APIResponse(APIObject):
     """
     Used to help make standardized Json responses to API's
     """
-    def __init__(self, response = None, warnings = None, error = None, key = None,
-                 hierarchy = None, data = None):
-        self._response = response
-        self.warnings = warnings
-        self.error = error
-        super(APIObject, self).__init__(data, key, hierarchy)
+    def __init__(self, message = None, warnings = None, error = None, data = None):
+        super(APIResponse, self).__init__(message, error = error,
+                                        warnings = warnings)
+
+    @property
+    def response_label(self):
+        """
+        Only get's called the first time, then it is cached in self.NAME
+        """
+        return self.api_object_name()
 
     def __getitem__(self, key):
         return self.response[key]
@@ -164,26 +191,26 @@ class APIResponse(APIObject):
     def iteritems(self):
         return self.response.iteritems()
 
+    def __str__(self):
+        return json.dumps(self.response, cls = APIEncoder)
+
     @property
-    def json(self):
-        """
-        return the json version of this object
-        """
+    def response(self):
         _json = {}
 
-        if self.response!=None:
-            _json['response'] = { self._name: self.response }
-
+        #if there is an error don't continue
         if self.error:
             _json['error'] = self.error
-        else:
-            _json['status'] = 'ok'
+            return _json
+        
+        _json['status'] = 'ok'
+
+        if self.message!=None:
+            _json['response'] = { self.response_label: self.message }
 
         if self.warnings:
             _json['warnings'] =  self.warnings
 
         return _json
 
-    @property
-    def response(self):
-        return self._response
+

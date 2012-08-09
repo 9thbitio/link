@@ -122,6 +122,18 @@ class TestWrapper(unittest.TestCase):
         ran = self.wrapper('test_cwd_script')
         self.assertTrue(ran!=None)
 
+    #def test_link_command_priorities(self):
+        #"""
+        #test that we prioritize lnk commands, then lnk scripts then cwd scripts 
+        #"""
+        #ran = self.wrapper('test_priority_1')
+        #self.assertTrue(ran!=None)
+
+        #ran = self.wrapper('test_priority_2')
+        #self.assertTrue(ran!=None)
+
+        #ran = self.wrapper('test_priority_3')
+        #self.assertTrue(ran!=None)
 
 
 if __name__ == '__main__':

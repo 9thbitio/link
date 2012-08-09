@@ -53,11 +53,9 @@ class Commander(object):
         if not base_dir:
             base_dir = self.base_dir 
 
-        print self.commands
         if self.commands:
             #make a copy of the arra
             cmd = self.commands.get(name)
-            print cmd
             if cmd:
                 if not isinstance(cmd, list):
                     cmd = [cmd]
@@ -67,7 +65,6 @@ class Commander(object):
 
                 cmd.extend(map(str,kargs))
                 cmd = '%s/%s' % (base_dir, "/".join(cmd))
-                print cmd
                 p= Popen(cmd,shell=True)
                 p.wait()
                 return p
@@ -412,9 +409,6 @@ class Wrapper(object):
             commander = self.cmdr
         
         base_dir = base_dir or ''
-        print "here"
-        print commander
-        print name
         run_parameters = []
         if args and isinstance(args, list): 
             run_parameters = args[1:]
@@ -422,7 +416,6 @@ class Wrapper(object):
             return commander.run_command(name, *run_parameters,
                                          base_dire=base_dir)
         except Exception as e:
-            print e
             return None
 
     def __call__(self, *kargs, **kwargs):
@@ -434,7 +427,6 @@ class Wrapper(object):
         """
         #run the command specified by the first param, else run the default
         #cammond
-        print self.script_commander.has_command(kargs[0])
         if kargs and len(kargs)>0:
 
             if self.commander.has_command(kargs[0]):

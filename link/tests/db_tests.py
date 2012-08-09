@@ -4,7 +4,9 @@ from link.wrappers import DBConnectionWrapper
 from mock import Mock, MagicMock
 
 class TestDBConnectionWrapper(unittest.TestCase):
-
+    """
+    Test that we are wrapping DB connections correctly
+    """
     def setUp(self):
         self.cw = DBConnectionWrapper()
         #create a fake connection that is a mock as well
@@ -26,12 +28,12 @@ class TestDBConnectionWrapper(unittest.TestCase):
                           [c[0].lower() for c in headers]) 
     
     def test_select(self):
-        return_val = ((1,2), (3,4))
-        self.cw.execute.return_value.fetchall.return_value = return_val
         query = 'my select statement'
         results = self.cw.select(query)
-        self.assertEquals(query, self.cw.execute.call_args[0][0])
-        self.assertEquals(results, return_val) 
+        expected = ((1,2), (3,4))
+        results._data = expected
+        self.assertEquals(query, results.query)
+        self.assertEquals(results.data, expected) 
 
 
 if __name__ == '__main__':

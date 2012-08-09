@@ -15,10 +15,9 @@
     },
     "test_wrapper": {
         "__cmds__": {
-            "test_command": "/usr/bin/ls",
+            "test_command": "/bin/echo ''",
             "path": "test_db.sqlite"
         }
- 
     },
     "apis": {
         "test_api": {
