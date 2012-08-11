@@ -9,6 +9,13 @@ class MockAPIObject(APIObject):
     
     def my_message(self):
         return "hello"
+    
+    @property
+    def response_label(self):
+        return self.my_label() 
+
+    def my_label(self):
+        return "my_response"
 
     @property
     def message(self):
@@ -26,7 +33,7 @@ class TestAPIObject(unittest.TestCase):
 
     def test_message_and_warnings(self):
         api = APIObject(self.message, warnings = self.warnings)
-        expected = {'response':self.message, 'status':'ok',
+        expected = {'response':{'apiobject': self.message}, 'status':'ok',
                     'warnings':self.warnings} 
 
         self.assertEquals(expected, api.response)
@@ -34,7 +41,7 @@ class TestAPIObject(unittest.TestCase):
 
     def test_message(self):
         api = APIObject(self.message)
-        expected = {'response':self.message, 'status':'ok'}
+        expected = {'response':{'apiobject':self.message}, 'status':'ok'}
         self.assertEquals(expected, api.response)
         self.assertEquals(json.dumps(self.message),str(api))
 
@@ -46,9 +53,15 @@ class TestAPIObject(unittest.TestCase):
 
     def test_message_override(self):
         api = MockAPIObject(self.message)
-        expected = {'response':api.my_message(), 'status':'ok'}
+        expected = {'response':{api.my_label(): api.my_message()}, 'status':'ok'}
         self.assertEquals(expected, api.response)
         self.assertEquals(json.dumps(api.my_message()),str(api))
+
+    def test_message_get_and_get_item(self):
+        api = APIObject(self.message)
+        self.assertEquals(api.get('my'), self.message.get('my'))
+        self.assertEquals(api['my'], self.message['my'])
+
 
 class MockAPIResponse(APIResponse):
 

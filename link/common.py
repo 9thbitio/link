@@ -102,7 +102,7 @@ class APIEncoder(json.JSONEncoder):
         return super(APIEncoder, self).encode(obj)
 
 
-class APIObject(Node):
+class APIObject(object):
     """
     An APIObject could also be a node.  
 
@@ -111,19 +111,19 @@ class APIObject(Node):
     """
 
     def __init__(self, message = None, warnings = None ,
-                error = None, key = None):
+                error = None):
         self._message = message
         self.error = error
         self.warnings = warnings
-        super(APIObject, self).__init__(json)
+        super(APIObject, self).__init__()
     
     @classmethod
     def api_object_name(cls):
         return cls.__name__.lower() 
 
-    @property 
-    def json(self):
-        return self._json
+    #@property 
+    #def json(self):
+        #return self._json
 
     def __getitem__(self, name):
         try:
@@ -135,13 +135,20 @@ class APIObject(Node):
         return self.json.__iter__()
     
     def get(self, name):
-        return self.json.get(name)
+        return self.message.get(name)
 
     def __str__(self):
         return json.dumps(self.message , cls = APIEncoder)
 
     def __getitem__(self, key):
-        return self.json[key]
+        return self.message[key]
+
+    @property
+    def response_label(self):
+        """
+        Only get's called the first time, then it is cached in self.NAME
+        """
+        return self.api_object_name()
 
     @property
     def response(self):
@@ -155,7 +162,7 @@ class APIObject(Node):
         _json['status'] = 'ok'
 
         if self.message!=None:
-            _json['response'] = self.message 
+            _json['response'] = { self.response_label: self.message }
 
         if self.warnings:
             _json['warnings'] =  self.warnings
@@ -166,30 +173,26 @@ class APIObject(Node):
     def message(self):
         return self._message
 
+    def set_message(self, message):
+        self._message = message
+
 
 class APIResponse(APIObject):
     """
     Used to help make standardized Json responses to API's
     """
-    def __init__(self, message = None, warnings = None, error = None, data = None):
+    def __init__(self, message = None, warnings = None, error = None):
         super(APIResponse, self).__init__(message, error = error,
                                         warnings = warnings)
 
-    @property
-    def response_label(self):
-        """
-        Only get's called the first time, then it is cached in self.NAME
-        """
-        return self.api_object_name()
-
-    def __getitem__(self, key):
-        return self.response[key]
+    #def __getitem__(self, key):
+        #return self.response[key]
     
-    def get(self, key):
-        return self.response.get(key)
+    #def get(self, key):
+        #return self.response.get(key)
  
-    def iteritems(self):
-        return self.response.iteritems()
+    #def iteritems(self):
+        #return self.message.iteritems()
 
     def __str__(self):
         return json.dumps(self.response, cls = APIEncoder)
