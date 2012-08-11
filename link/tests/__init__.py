@@ -12,6 +12,9 @@ def tst_file_path(file_name):
 def tst_config_path(config_name):
     return '%s/config/%s' % (TESTS_DIR, config_name)
 
+def tst_db_path(config_name):
+    return '%s/dbs/%s' % (TESTS_DIR, config_name)
+
 def load_tst_config(config_name):
     config_path = tst_config_path(config_name)
     return load_json_file(config_path)

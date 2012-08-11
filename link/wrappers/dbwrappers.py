@@ -60,15 +60,30 @@ class DBConnectionWrapper(Wrapper):
     wraps a database connection and extends the functionality
     to do tasks like put queries into dataframes
     """
-    def __init__(self, wrap_name = None, **kwargs):
+    def __init__(self, wrap_name = None, chunked=False, **kwargs):
         
         if kwargs:
             self.__dict__.update(kwargs)
 
         #get the connection and pass it to wrapper os the wrapped object
+        self.chunked = chunked
+        self._chunks = None
         connection = self.create_connection()
         super(DBConnectionWrapper, self).__init__(wrap_name, connection)
     
+    @property
+    def chunks(self):
+        return self._chunks
+
+    def chunk(self, chunk_name):
+        """
+        this is the default lookup of one of the database chunks
+        """
+        if self.chunks == None:
+           raise Exception('This is not a chunked connection ') 
+        
+        return self.chunks.get(chunk_name)
+
     def execute(self, query):
         """
         Creates a cursor and executes the query for you
@@ -99,18 +114,23 @@ class DBConnectionWrapper(Wrapper):
                             "in your query %s, please rename" % columns)
         return list_to_dataframe(data, columns) 
     
-    def select(self, query=None):
+    def select(self, query=None, chunk_name = None):
         """
         Run a select and just return everything. If you have pandas installed it
         is better to use select_dataframe if you want to do data manipulation
         on the results
         """
-        cursor = self._wrapped.cursor()
+        cursor = None
+        if chunk_name:
+            #look up the db chunk that you want to read from
+            cursor = self.chunk(chunk_name).cursor()
+        else:
+            cursor = self._wrapped.cursor()
+
+        if not cursor:
+            raise Exception("no cursor found")
+
         return DBCursorWrapper(cursor, query)()
- 
-        #cursor = self.execute(query)
-        #data = cursor.fetchall()
-        #return data
  
     def create_connection(self):
         """
@@ -126,29 +146,94 @@ class SqliteDBConnectionWrapper(DBConnectionWrapper):
     """
     A connection wrapper for a sqlite database
     """
-    def __init__(self, wrap_name=None, path=None, create_db = True):
+    def __init__(self, wrap_name=None, path=None, chunked = False, 
+                create_db = True):
         """
         A connection for a SqlLiteDb.  Requires that sqlite3 is
         installed into python
 
-        :param path: Path to the sqllite db
+        :param path: Path to the sqllite db.  
         :param create_db: if True Create if it does not exist in the 
                           file system.  Otherwise throw an error
+        :param chunked: True if this in a path to a chunked sqlitedb
         """
         self.create_db = create_db
+
         if not path:
             raise Exception("Path Required to create a sqllite connection")
         super(SqliteDBConnectionWrapper, self).__init__(wrap_name=wrap_name, 
-                                                  path=path)
+                                                  path=path, chunked = chunked)
 
     def create_connection(self):
         """
         Override the create_connection from the DbConnectionWrapper
         class which get's called in it's initializer
         """
+        # if we are chunking and this is not a db then don't try to make a
+        # connection
+        if self.chunked and not self.path.endswith('.db'):
+            return None
+
+        return self._connection_from_path(self.path)
+    
+    def _connection_from_path(self, path):
         import sqlite3
-        db = sqlite3.connect(self.path)
+        db = sqlite3.connect(path)
         return db
+
+    @property
+    def chunks(self):
+        """
+        For sqlite we are chunking by making many files that are of smaller size 
+        This makes it easy to distribute out certain parts of it. Directory
+        structure looks like this::
+
+            test_db.db --> sqlitedb
+            test_db/
+                my_chunk.db --> another small chunk
+
+        """
+        if self._chunks:
+            return self._chunks
+
+        if  self.chunked:
+            self._chunks = self._get_chunks()
+            return self._chunks
+
+        raise Exception("This database is not chunked")
+
+    def chunk(self, chunk_name):
+        """
+        Get a chunk and if its not connected yet then connect it
+        """
+        chunk = self.chunks.get(chunk_name)
+        if chunk:
+            #if its a string then create the connection and put it in _chunks
+            if isinstance(chunk,str) or isinstance(chunk,unicode):
+                chunk = self._connection_from_path(chunk)
+                self._chunks[chunk_name] = chunk
+            return chunk  
+
+        raise Exception("there is no chunk")
+    
+    def _get_chunks(self):
+        """
+        creates connections for each chunk in the set of them
+        """
+        import os
+        dir = self.path
+        #rstrip will remove too much if you you path is /path/test_db.db
+        if dir.endswith('.db'):
+            dir = dir[:-3]
+
+        dir = dir.rstrip('/')
+        dbs = os.listdir(dir)
+
+        return dict([
+            (name, '%s/%s' % (dir, name))
+             for name in dbs
+            ]
+        )
 
     def __call__(self):
         """
@@ -156,7 +241,7 @@ class SqliteDBConnectionWrapper(DBConnectionWrapper):
         """
         self.run_command('sqlite3 %s' % self.path)
 
-
+    
 class MysqlDBConnectionWrapper(DBConnectionWrapper):
 
     def __init__(self, wrap_name=None, user=None, password=None, 
