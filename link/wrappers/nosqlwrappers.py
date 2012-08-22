@@ -69,13 +69,14 @@ class HbaseNoSqlConnectionWrapper(NoSqlConnectionWrapper):
     import happybase 
     #from hbase import Hbase 
 
-    def __init__(self, wrap_name=None, host=None):
+    def __init__(self, wrap_name=None, host=None, version=None):
         """
         A connection for a SqlLiteDb.  Requires that sqlite3 is
         installed into python
 
         :param host: the host:port of the hbase thrift server
         """
+        self.version = version
         (self.host, self.port) = self._host_to_hostport(host)
         
         # TODO: Where would one configure the default port for link
@@ -95,7 +96,8 @@ class HbaseNoSqlConnectionWrapper(NoSqlConnectionWrapper):
         #transport.open()
         #protocol = TBinaryProtocol.TBinaryProtocol(transport)
 
-        return self.happybase.Connection(self.host, port=self.port)
+        return self.happybase.Connection(self.host,
+                                         port=self.port,compat=self.version)
 
     #def increment(self, row, column, amount=1, table=None):
         #"""
