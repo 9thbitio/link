@@ -87,9 +87,54 @@ class TestLink(unittest.TestCase):
         lnk.load_wrapper_packages([FAKE_WRAPPER_PACKAGE2])
         self.assertTrue(lnk.wrappers.has_key('FakeWrapper2'))
 
+class TestLazyFunctions(unittest.TestCase):
+
+    def setUp(self):
+        #reset the config every time to config1
+        lnk.fresh(config_file=config1_path)
+
+    def test_function_lookup(self):
+        func = lnk.lazy_functions.test_function
+        self.assertTrue(func.commander.has_command("__default__"))
+        self.assertTrue(func.commander.has_command("function"))
+        self.assertFalse(func.commander.has_command("aeuoaeaosuoesth"))
+        
 
 class TestWrapper(unittest.TestCase):
-    pass
+
+    def setUp(self):
+        lnk.fresh(config_file=config1_path)
+        self.wrapper = lnk.test_wrapper
+    
+    def test_link_scripts(self):
+        ran = self.wrapper('test_script')
+        self.assertTrue(ran!=None)
+
+    def test_link_commands(self):
+        ran = self.wrapper('test_command')
+        self.assertTrue(ran!=None)
+
+    def test_link_cwd_scripts(self):
+        """
+        test that you can run scripts in the current working directory.  you
+        must be in a directory where scripts/test_local_scripts exists 
+        """
+        ran = self.wrapper('test_cwd_script')
+        self.assertTrue(ran!=None)
+
+    #def test_link_command_priorities(self):
+        #"""
+        #test that we prioritize lnk commands, then lnk scripts then cwd scripts 
+        #"""
+        #ran = self.wrapper('test_priority_1')
+        #self.assertTrue(ran!=None)
+
+        #ran = self.wrapper('test_priority_2')
+        #self.assertTrue(ran!=None)
+
+        #ran = self.wrapper('test_priority_3')
+        #self.assertTrue(ran!=None)
+
 
 if __name__ == '__main__':
     import nose
