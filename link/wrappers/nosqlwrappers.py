@@ -69,7 +69,7 @@ class HbaseNoSqlConnectionWrapper(NoSqlConnectionWrapper):
     import happybase 
     #from hbase import Hbase 
 
-    def __init__(self, wrap_name=None, host=None, version=None):
+    def __init__(self, wrap_name=None, host=None, version='0.92'):
         """
         A connection for a SqlLiteDb.  Requires that sqlite3 is
         installed into python
