@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from flask import Flask, request, json, Response
 from link import lnk
 
@@ -108,4 +109,5 @@ if __name__ == "__main__":
     debug = False
     if len(sys.argv)>1:
         debug = sys.argv[1] == 'debug'
+
     app.run(debug =debug , host='0.0.0.0')

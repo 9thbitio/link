@@ -10,6 +10,7 @@ import json
 from xml.etree import cElementTree as ET
 from link import Wrapper
 
+
 class APIResponseWrapper(Wrapper):
     """
     Wrap an API response and make it easy to parse out
@@ -147,3 +148,18 @@ class APIRequestWrapper(Wrapper):
         sess = requests.session(headers = self.headers)
         self._wrapped = sess
         self._wrapped = self.authenticate()
+
+
+class LnkClient(APIRequestWrapper):
+
+    def __init__(self, wrap_name = None, host='localhost', port=5000, user = None, password=None):
+        url = '%s:%s' % (host, port)
+        super(LnkClient, self).__init__(wrap_name, base_url = url)
+    
+    def configure(self):
+        """
+        The api for requesting the configuration 
+        """
+        return self.post('/configure')
+
+
