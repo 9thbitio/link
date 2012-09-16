@@ -87,44 +87,42 @@ class HbaseNoSqlConnectionWrapper(NoSqlConnectionWrapper):
         Override the create_connection from the DbConnectionWrapper
         class which get's called in it's initializer
         """
-        #from thrift.transport.TSocket import TSocket
-        #from thrift.transport.TTransport import TBufferedTransport
-        #from thrift.protocol import TBinaryProtocol
-        #from hbase import Hbase 
-
-        #transport = TBufferedTransport(TSocket(self.host,self.port))
-        #transport.open()
-        #protocol = TBinaryProtocol.TBinaryProtocol(transport)
-
         return self.happybase.Connection(self.host,
                                          port=self.port,compat=self.version)
-
-    #def increment(self, row, column, amount=1, table=None):
-        #"""
-        #Increment a column by some amount
-        #"""
-        #table = self.get_current_table(table)
-        #self._wrapped.atomicIncrement(table, row, column, amount)
-
-    #def get(self, row, columns=None, table=None):
-        #"""
-        #get the row or rows from a table (could do cool things with rows by
-        #allowing for regex or searches
-        #"""
-        #table = self.get_current_table(table)
-        #return self._wrapped.getRowWithColumns(table, row, columns=columns)
-    
-    #def put(self, row, column, value, table=None):
-        #"""
-        #put a key or keys back to the nosqldb.  Should support dictionary
-        #updates or multiple mutations
-        #"""
-        #table = self.get_current_table(table)
-        #mutation = self.Hbase.Mutation(column=column,value=value)
-        #return self._wrapped.mutateRow(table, row, [mutation])
 
     def __call__(self):
         """
         Run's the command line sqlite application
         """
         self.run_command('hbase shell')
+
+
+class MongoDB(NoSqlConnectionWrapper):
+    """
+    A connection wrapper for a sqlite database
+    """
+    def __init__(self, wrap_name=None, host=None, port=None, **kwargs):
+        """
+        MongoDB wrapper to connect to mongo
+
+        :param host: the host:port of the hbase thrift server
+        """
+        (self.host, self.port) = (host, port) 
+        self.params = kwargs
+        
+        # TODO: Where would one configure the default port for link
+        super(MongoDB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the DbConnectionWrapper
+        class which get's called in it's initializer
+        """
+        from pymongo import Connection
+        return Connection(self.host, port=self.port, **self.params)
+
+    def __call__(self):
+        """
+        Run's the command line sqlite application
+        """
+        self.run_command('mongo')
