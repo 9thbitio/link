@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from flask import Flask, request, json, Response
 from link import lnk, Wrapper
+from subprocess import Popen, signal
 
 app = Flask(__name__)
 
@@ -18,16 +19,13 @@ class LnkServer(Wrapper):
 
     def start(self, host=None, port=None, background=False, debug=False):
         """
-        Start the configuration server on the host and port
+        Start the configuration server on the host and port.  Probably need to
+        revisit this. 
         """
         import sys
         
         host = host or self.host
         port = port or self.port
-
-        #app.run(debug =debug , host=host, port = port)
-        import subprocess as sp
-        from multiprocessing import Process, Pipe
 
         #TODO: need to have a test that checks for lnk_dir
         from link import lnk_dir
@@ -37,10 +35,10 @@ class LnkServer(Wrapper):
         else:
             debug = ''
 
-        cmd = '%s/scripts/server.py %s' % (lnk_dir, debug)
+        #cmd = '%s/scripts/server.py %s' % (lnk_dir, debug)
 
-        #this should call the __name__ == '__main__' code
-        self.process=sp.Popen(cmd, shell=True)
+        cmd = ['%s/scripts/server.py' % (lnk_dir), debug]
+        self.process=Popen(cmd)
         #if its not background then let's wait for it
         if not background:
             self.process.wait()
@@ -49,10 +47,14 @@ class LnkServer(Wrapper):
 
     def stop(self):
         """
-        Stop this server
+        Stop this server.
         """
+        #TODO: If you are using debug server it starts a second process 
+        # and the kill does not kill that one
         if self.process:
             self.process.kill()
+            self.process.wait()
+            self.process = None
             return True
         return False
 
@@ -63,6 +65,9 @@ class LnkServer(Wrapper):
         pass
 
     def __del__(self):
+        """
+        Not sure if i need this
+        """
         self.stop()
 
 try:
@@ -70,7 +75,4 @@ try:
     lnk_server = lnk.lnk.server 
 except:
     lnk_server = LnkServer()
-
-if __name__ == "__main__":
-    lnk_server.start()
 

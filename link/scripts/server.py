@@ -31,9 +31,15 @@ def configure():
     Get configuration for this user and password
     """
     j = request.json
-    user = j.get('user_id')
+
+    if j is None:
+        return '{"error":"NOJSON"}'
+
+    print j 
+    user = j.get('user')
     password = j.get('password')
-    config = user_config.find_one({'user_id':user})
+    print user
+    config = user_config.find_one({'user':user})
     #pop off the id that mongo gives it
     if config:
         config.pop('_id')
@@ -57,12 +63,12 @@ def edit():
     j = request.json
 
     if j:
-        user = j.get('user_id')
+        user = j.get('user')
         if not user:
             return '{"error":"NOUSERSPECIFIED"}'
         remove_mongo_id(j)
         #don't want it overwriting things like the id
-        config = user_config.find_one({'user_id':user})
+        config = user_config.find_one({'user':user})
 
         #if its already there then just overwrite it
         #not sure this is the behavior i want
@@ -86,14 +92,14 @@ def new():
     """
     j = request.json
     if j:
-        user = j.get('user_id')
+        user = j.get('user')
 
         if not user:
             return '{"error":"NOUSERSPECIFIED"}'
 
         #don't want it overwriting things like the id
         remove_mongo_id(j)
-        config = user_config.find_one({'user_id':user})
+        config = user_config.find_one({'user':user})
 
         if config:
             return '{"error":"USEREXISTS", "error_msg":"Try /edit to edit an existing user}'
@@ -110,4 +116,4 @@ if __name__ == "__main__":
     if len(sys.argv)>1:
         debug = sys.argv[1] == 'debug'
 
-    app.run(debug =debug , host='0.0.0.0')
+    app.run(debug=debug , host='0.0.0.0')
