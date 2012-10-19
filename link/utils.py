@@ -17,7 +17,11 @@ def load_json_file(file_name):
         raise Exception("Error json decoding file %s" % file_name)
 
 def list_to_dataframe(rows, names):
-    import pandas._tseries as lib
+    from pandas.version import version
+    if version < '0.8.0':
+        import pandas._tseries as lib
+    else:
+        import pandas.lib as lib
     from pandas import DataFrame
 
     if isinstance(rows, tuple):
