@@ -4,6 +4,7 @@ import inspect
 import json
 from utils import load_json_file
 from subprocess import Popen
+from common import Cacheable
 
 #this get's the current directory of link
 lnk_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -24,7 +25,6 @@ class Commander(object):
         else:
             self.commands = {}
 
-    
     def set_base_dir(self, base_dir):
         """
         set the base dir which will uncache the commands it has stored
@@ -274,6 +274,7 @@ class Link(object):
 
         return self.__config
 
+
     def __call__(self, wrap_name=None, *kargs, **kwargs):
         """
         Get a wrapper given the name or some arguments
@@ -339,7 +340,7 @@ class Link(object):
 
 lnk = Link.instance()
 
-class Wrapper(object):
+class Wrapper(Cacheable):
     """
     The wrapper wraps a piece of the configuration.  
     """
@@ -357,6 +358,7 @@ class Wrapper(object):
                                          '%s/scripts' % os.getcwd())
         self.cmdr = self.script_commander
         self.loaded = True
+        self.cache = {}
         self.__dict__['__link_config__'] = kwargs
     
     def __getattr__(self, name):
@@ -365,19 +367,21 @@ class Wrapper(object):
         """
         #first look for a wrapper item named that
         if name in self.__dict__:
+            print name
             return self.__getatribute__(name)
-        try:
-            if self._wrapped is not None:
-                return self._wrapped.__getattribute__(name)
-        except:
-            raise AttributeError("No Such Attribute in wrapper %s" % name)
+
+        if self._wrapped is not None:
+            #if it has a getattr then try that out otherwise go to getattribute
+            #TODO: Deeply understand __getattr__ vs __getattribute__.
+            #this might not be correct
+            try:
+                return self._wrapped.__getattr__(name)
+            except Exception as e:
+                try:
+                    return self._wrapped.__getattribute__(name)
+                except Exception as e:
+                    raise AttributeError("No Such Attribute in wrapper %s" % name)
        
-        try:
-            if self._wrapped is not None:
-                return self._wrapped.__getattribute__(name)
-        except:
-            raise AttributeError("No Such Attribute in wrapper %s" % name)
-            
         # i'm not sure I have to do the loaded thing
         if self.loaded:
             #try the command, if its nothing than try the wrapper

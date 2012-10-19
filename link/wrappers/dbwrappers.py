@@ -234,7 +234,7 @@ class SqliteDBConnectionWrapper(DBConnectionWrapper):
              for name in dbs
             ]
         )
-
+    
     def __call__(self):
         """
         Run's the command line sqlite application

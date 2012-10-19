@@ -17,6 +17,40 @@ class Node(object):
     def apply(self):
         pass
 
+class Cacheable(object):
+    """
+    on object that has a cache built into it for storing data
+    """
+    def __init__(self, read_permissions = None, write_permissions = None):
+        """
+        Read permissions is whether the user has read or write access to this db
+        Not sure if this will ever be helpful
+        """
+        super(Cacheable, self).__init__()
+        self.cache = {}
+
+    def cache_put(self, key, data, read_type = None):
+        """
+        Put <key> into the cache into the cache.  If Link is configured to it
+        will put it into the end datastore.  Will also make sure that it has
+        clean data before writing::
+            
+            key: the key that you want to store data at
+            data: the data that you want to cache
+        """
+        self.cache[key] = data
+
+    def cache_get(self, key, read_type = None):
+        """
+        will get the key from the cache.  You can make it so that it will go to
+        the underlying database. Takes care of dirty data for
+        you...somehow...figure out how to do that 
+
+            key: the key of the data you want to look up in cache
+        """
+        return self.cache.get(key)
+
+    
 class Result(Node):
     """
     A result of a rule being applied to the data
@@ -48,7 +82,7 @@ class Single(object):
                 cls, *args, **kwargs)
         return cls._instance
 
-class Data(Single):
+class Data(Single, Cacheable):
     """
     Encapsulates data from a database
     """
@@ -71,6 +105,35 @@ class Data(Single):
             raise Exception("No data to iterate through")
 
         return self.data.__iter__()
+
+class DataSet(Single, Cacheable):
+    """
+    Encapsulates data from a database
+    """
+    def __init__(self, data = None):
+        self.data = data
+        super(Data, self).__init__()
+    
+    def __call__(self):
+        pass
+
+    def cache_get(self):
+        pass
+
+    def __iter__(self):
+        """
+        If it's never set then throw an exception
+        """
+        if self.data == None:
+            raise Exception("No data to iterate through")
+
+        return self.data.__iter__()
+
+    def refresh(self):
+        """
+        A function that allows you to refresh a full dataset.  
+        """
+        pass
 
 class Action(object):
     pass
