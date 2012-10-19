@@ -5,16 +5,23 @@ from link.wrappers import APIRequestWrapper, APIResponseWrapper
 from xml.etree import cElementTree as ET
 import requests
 
+
+class MockResponse(object):
+
+    def __init__(self):
+        self.content = None
+
 class TestResponseWrapper(unittest.TestCase):
 
     XML = """<!DOCTYPE html>\n<html>\n  <head>\n\t  <title>Whoops - Pivotal Tracker</title>\n    <style type="text/css" media="screen">\n      body {\n        margin: 1em auto 0 auto;\n        width: 30em;\n        padding: 2em 5em;\n        background: white;\n        font-family: Helvetica,sans-serif;\n      }\n      .centered_miniform {\n        border: 3px solid #97C8E5;\n        margin-top: 3em;\n        padding: 3em 4em;\n        color: #333;\n      }\n      a img {\n        border: none;\n      }\n      h1 {\n        font-size: 22px;\n        font-weight: bold;\n      }\n    </style>\n  </head>\n  <body>\n    <a href="/"><img alt="Tracker" src="/images/v7/logos/pivotal_tracker.png" /></a>\n    <div class="centered_miniform">\n      <h1>Whoops, an error occurred</h1>\n      <p>Don\'t worry, we\'re looking into it.</p>\n    </div>\n  </body>\n</html>\n"""
 
     def setUp(self):
         #this response will be the _wrapped object
-        self.response = Mock()
+        self.response = MockResponse()
 
     def test_json(self):
         self.response.content = '{"this":"is", "json":true}'
+        print self.response.content
         resp = APIResponseWrapper(response = self.response)
         self.assertEquals(json.loads(self.response.content), resp.json)
 

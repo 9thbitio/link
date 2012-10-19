@@ -10,6 +10,7 @@ import json
 from xml.etree import cElementTree as ET
 from link import Wrapper
 
+
 class APIResponseWrapper(Wrapper):
     """
     Wrap an API response and make it easy to parse out
@@ -147,3 +148,29 @@ class APIRequestWrapper(Wrapper):
         sess = requests.session(headers = self.headers)
         self._wrapped = sess
         self._wrapped = self.authenticate()
+
+class JsonClient(APIRequestWrapper):
+    """
+    A json client means its sending json back and forth
+    """
+    def __init__(self, *args, **kwargs):
+        super(JsonClient, self).__init__(*args, **kwargs)
+        self.headers["Content-type"] = "application/json"
+
+class LnkClient(JsonClient):
+
+    def __init__(self, wrap_name = None, host='localhost', port=5000, user = None, password=None):
+        url = '%s:%s' % (host, port)
+        super(LnkClient, self).__init__(wrap_name, base_url = url, user = user, password = password)
+    
+    def configure(self):
+        """
+        The api for requesting the configuration 
+        """
+        post = {"user": self.user, 'password': self.password}
+        return self.post('/configure', data = json.dumps(post))
+    
+    def new(self):
+        post = {"user": self.user, 'password': self.password}
+        return self.post('/new', data = json.dumps(post))
+
