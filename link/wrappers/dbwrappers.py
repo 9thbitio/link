@@ -164,7 +164,12 @@ class DBConnectionWrapper(Wrapper):
         Returns the time now according to the database.  You can also pass in an
         offset so that you can add or subtract hours from the current
         """
-        pass
+        try:
+            return self.select('select now()').data[0][0]
+        except:
+            raise Exception("the default select now() does not work on this database"
+                            + " override this function if you would like this "
+                            + "feature for your database ")
 
 
 class SqliteDBConnectionWrapper(DBConnectionWrapper):
