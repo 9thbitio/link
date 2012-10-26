@@ -297,12 +297,8 @@ class Link(object):
 
         # if it is here we want to remove before we pass through
         wrapper = self._get_wrapper(wrap_config.pop('wrapper', None))
+        return wrapper(wrap_name = wrap_name, **wrap_config)
 
-        try:
-            return wrapper(wrap_name = wrap_name, **wrap_config)
-        except TypeError as e:
-            raise Exception('Error wrapping configuration with object %s, message %s ' %
-                            (wrapper, e.message))
 
     def _get_wrapper(self, wrapper):
         """

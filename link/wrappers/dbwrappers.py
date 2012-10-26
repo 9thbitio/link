@@ -141,6 +141,31 @@ class DBConnectionWrapper(Wrapper):
         """
         pass
 
+    def use(self, database):
+        """
+        Switch to using a specific database
+        """
+        pass
+    
+    def databases(self):
+        """
+        Returns the databases that are available
+        """
+        pass
+
+    def tables(self):
+        """
+        Returns the tables that are available
+        """
+        pass
+
+    def now(self, offset=None):
+        """
+        Returns the time now according to the database.  You can also pass in an
+        offset so that you can add or subtract hours from the current
+        """
+        pass
+
 
 class SqliteDBConnectionWrapper(DBConnectionWrapper):
     """
@@ -241,8 +266,95 @@ class SqliteDBConnectionWrapper(DBConnectionWrapper):
         """
         self.run_command('sqlite3 %s' % self.path)
 
+class NetezzaDB(DBConnectionWrapper):
     
-class MysqlDBConnectionWrapper(DBConnectionWrapper):
+    def __init__(self, wrap_name=None, user=None, password=None, 
+                 host=None, database=None):
+        self.user = user
+        self.password = password
+        self.host = host
+        self.database = database
+        super(NetezzaDB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the Netezza 
+        class which get's called in it's initializer
+        """
+        import pyodbc
+        connection_str="DRIVER={%s};SERVER=%s;DATABASE=%s;UID=%s;PWD=%s" % (
+              "NetezzaSQL",self.host, self.database, self.user, self.password)
+        #connect to a netezza database, you need ansi=True or it's all garbled
+        return pyodbc.connect(connection_str, ansi=True)
+
+
+class VerticaDB(DBConnectionWrapper):
+    
+    def __init__(self, wrap_name=None, user=None, password=None, 
+                 host=None, database=None):
+        self.user = user
+        self.password = password
+        self.host = host
+        self.database = database
+        super(VerticaDB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the VerticaDB 
+        class which get's called in it's initializer
+        """
+        import pyodbc
+        connection_str=(
+                        "DRIVER={%s};SERVER=%s;DATABASE=%s;UID=%s;PWD=%s" 
+                        % 
+                        ("VerticaSQL",self.host, self.database, self.user, self.password)
+                       )
+        #connect to a netezza database, you need ansi=True or it's all garbled
+        return pyodbc.connect(connection_str, ansi=True)
+
+#class MysqlDB(DBConnectionWrapper):
+
+    #def __init__(self, wrap_name=None, user=None, password=None, 
+                 #host=None, database=None):
+        #"""
+        #A connection for a Mysql Database.  Requires that
+        #MySQLdb is installed
+
+        #:param user: your user name for that database 
+        #:param password: Your password to the database
+        #:param host: host name or ip of the database server
+        #:param database: name of the database on that server 
+        #"""
+        #self.user = user
+        #self.password = password
+        #self.host = host
+        #self.database = database
+        #super(MysqlDB, self).__init__(wrap_name=wrap_name)
+
+    #def create_connection(self):
+        #"""
+        #Override the create_connection from the DbConnectionWrapper
+        #class which get's called in it's initializer
+        #"""
+        #import pyodbc
+        #connection_str=(
+                        #"DRIVER={%s};SERVER=%s;DATABASE=%s;UID=%s;PWD=%s"
+                        #% 
+                        #("MySQL",self.host, self.database, self.user, self.password)
+                       #)
+        ##connect to a netezza database, you need ansi=True or it's all garbled
+        #return pyodbc.connect(connection_str)
+
+    #def __call__(self, query = None, outfile= None):
+        #"""
+        #Create a shell connection to this mysql instance
+        #"""
+        #cmd = 'mysql -A -u %s -p%s -h %s %s' % (self.user, self.password,
+                                                     #self.host, self.database)
+        #self.run_command(cmd)
+
+    
+class MysqlDB(DBConnectionWrapper):
 
     def __init__(self, wrap_name=None, user=None, password=None, 
                  host=None, database=None):
@@ -259,7 +371,7 @@ class MysqlDBConnectionWrapper(DBConnectionWrapper):
         self.password = password
         self.host = host
         self.database = database
-        super(MysqlDBConnectionWrapper, self).__init__(wrap_name=wrap_name)
+        super(MysqlDB, self).__init__(wrap_name=wrap_name)
 
     def create_connection(self):
         """
@@ -280,6 +392,19 @@ class MysqlDBConnectionWrapper(DBConnectionWrapper):
                                db=self.database, passwd=self.password,
                                conv=conv)
         return conn
+
+    def use(self, database):
+        return self.select('use %s' % database).data
+
+    def databases(self):
+        return self.select('show databases').data
+
+    def tables(self):
+        return self.select('show tables').data
+
+    def now(self):
+        # not sure that the [0][0] will always be true...but it works now
+        return self.select('select now()').data[0][0]
 
     def __call__(self, query = None, outfile= None):
         """
