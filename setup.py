@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from setuptools import setup
 
-VERSION = (0, 0, 5)
+VERSION = (0, 0, 6)
 NAME = 'link'
 DESCRIPTION = "Easy and consistent access to the objects you care about"
 LONG_DESCRIPTION = "Easy and consistent access to the objects you care about"
@@ -17,7 +17,7 @@ EMAIL = ''
 VERSION_STRING = '.'.join(map(str,VERSION))
 SETUP_ARGS = {}
 DATA_FILES = [('link/configs', ['link/configs/link.config'])]
-REQUIRES = ['requests >=0.11', 'MySQL-python'] 
+REQUIRES = []
 
 try:
     import numpy
