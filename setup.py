@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 from setuptools import setup
+import os
 
-VERSION = (0, 0, 6)
+dir = os.path.split(os.path.abspath(__file__))[0]
+
+VERSION = (0, 0, 8)
 NAME = 'link'
 DESCRIPTION = "Easy and consistent access to the objects you care about"
 LONG_DESCRIPTION = "Easy and consistent access to the objects you care about"
@@ -27,7 +30,7 @@ except:
     print "easy_install numpy"
     print "easy_install pandas"
 
-def write_version(filename='link/version.py'):
+def write_version(filename=dir + '/link/version.py'):
     """
     Write out the version python file to the link directory before installing
     """
@@ -54,6 +57,6 @@ setup(name=NAME,
       packages=['link', 'link.wrappers', 'link.configs'],
       #package_data = {'link.configs': ['link.configs/*config']},
       install_requires = REQUIRES,
-      data_files = DATA_FILES,
+      #data_files = DATA_FILES,
       classifiers=CLASSIFIERS,
       **SETUP_ARGS)

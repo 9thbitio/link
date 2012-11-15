@@ -146,6 +146,7 @@ class Actions(object):
         self.query = query
         super(Actions, self).__init__()
 
+import datetime
 
 class APIEncoder(json.JSONEncoder):
     """
@@ -158,6 +159,11 @@ class APIEncoder(json.JSONEncoder):
             if isinstance(obj, APIResponse):
                 return obj.response
             return obj.message
+        
+        #we will use the default format...but we probably want to make this
+        #configurable
+        if isinstance(obj, datetime.datetime):
+            return str(obj)
 
         return super(APIEncoder, self).encode(obj)
 
@@ -244,9 +250,15 @@ class APIResponse(APIObject):
     """
     Used to help make standardized Json responses to API's
     """
-    def __init__(self, message = None, warnings = None, error = None):
+    def __init__(self, message = None, warnings = None, error = None,
+                 seek = None):
         super(APIResponse, self).__init__(message, error = error,
                                         warnings = warnings)
+        if seek:
+            self.seek(*seek)
+    
+    def seek(self, *kargs):
+        raise NotImplementedError()
 
     #def __getitem__(self, key):
         #return self.response[key]

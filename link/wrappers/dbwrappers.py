@@ -5,11 +5,12 @@ class DBCursorWrapper(Wrapper):
     """
     Wraps a select and makes it easier to tranform the data
     """
-    def __init__(self, cursor, query = None, wrap_name = None):
+    def __init__(self, cursor, query = None, wrap_name = None, args=None):
         self.cursor = cursor
         self._data = None
         self._columns = None
         self.query = query
+        self.args = args or ()
         super(DBCursorWrapper, self).__init__(wrap_name, cursor)
     
     @property
@@ -46,13 +47,14 @@ class DBCursorWrapper(Wrapper):
     def __iter__(self):
         return self.data.__iter__()
     
-    def __call__(self, query = None):
+    def __call__(self, query = None, args=()):
         """
         Creates a cursor and executes the query for you
         """
-        if not query:
-            query = self.query
-        self.cursor.execute(query)
+        args = args or self.args
+
+        query = query or self.query
+        self.cursor.execute(query, args=args)
         return self
 
 class DBConnectionWrapper(Wrapper):
@@ -84,16 +86,15 @@ class DBConnectionWrapper(Wrapper):
         
         return self.chunks.get(chunk_name)
 
-    def execute(self, query):
+    def execute(self, query, args = ()):
         """
         Creates a cursor and executes the query for you
         """
         cursor = self._wrapped.cursor()
-        cursor.execute(query)
-        return cursor
+        return DBCursorWrapper(cursor, query, args=args)()
 
     #TODO: Add in the ability to pass in params and also index 
-    def select_dataframe(self, query):
+    def select_dataframe(self, query, args=()):
         """
         Select everything into a datafrome with the column names
         being the names of the colums in the dataframe
@@ -104,7 +105,7 @@ class DBConnectionWrapper(Wrapper):
             raise Exception("pandas required to select dataframe. Please install"  + 
                             "sudo easy_install pandas")
 
-        cursor = self.execute(query)
+        cursor = self.execute(query, args = args)
         data = cursor.fetchall()
         columns = [x[0].lower() for x in cursor.description]
         
@@ -114,7 +115,7 @@ class DBConnectionWrapper(Wrapper):
                             "in your query %s, please rename" % columns)
         return list_to_dataframe(data, columns) 
     
-    def select(self, query=None, chunk_name = None):
+    def select(self, query=None, chunk_name = None, args=()):
         """
         Run a select and just return everything. If you have pandas installed it
         is better to use select_dataframe if you want to do data manipulation
@@ -130,7 +131,7 @@ class DBConnectionWrapper(Wrapper):
         if not cursor:
             raise Exception("no cursor found")
 
-        return DBCursorWrapper(cursor, query)()
+        return DBCursorWrapper(cursor, query, args=args)()
  
     def create_connection(self):
         """
