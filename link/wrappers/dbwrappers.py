@@ -54,7 +54,13 @@ class DBCursorWrapper(Wrapper):
         args = args or self.args
 
         query = query or self.query
-        self.cursor.execute(query, args=args)
+        #sqlite db does not take in args...so i have to do this
+        #TODO: Create custom dbcursor wrappers for different database types
+        if args:
+            self.cursor.execute(query, args=args)
+        else:
+            self.cursor.execute(query)
+
         return self
 
 class DBConnectionWrapper(Wrapper):
@@ -271,6 +277,14 @@ class SqliteDBConnectionWrapper(DBConnectionWrapper):
         Run's the command line sqlite application
         """
         self.run_command('sqlite3 %s' % self.path)
+
+    def execute(self, query):
+        """
+        Creates a cursor and executes the query for you
+        """
+        cursor = self._wrapped.cursor()
+        return DBCursorWrapper(cursor, query)()
+
 
 class NetezzaDB(DBConnectionWrapper):
     

@@ -112,6 +112,19 @@ class TestAPIResponse(unittest.TestCase):
                                 'status':'ok'}
         self.assertEquals(json.dumps(expected), str(api))
 
+    def test_pagenation(self):
+        message = [1,2,3,4,5,6,7]
+        api = APIResponse(message=message)
+        #default behavior set the number of pages to 50
+        self.assertTrue(api.next_page().message == message)
+
+        api = APIResponse(message=message)
+        api.pagenate(3)
+        self.assertTrue(api.next_page().message == [1,2,3])
+        self.assertTrue(api.next_page().message == [4,5,6])
+        self.assertTrue(api.next_page().message == [7])
+
+
 
 if __name__ == '__main__':
     import nose

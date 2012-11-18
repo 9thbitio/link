@@ -301,10 +301,17 @@ class APIResponse(APIObject):
         #this is sorta weird, but you want to make that object's message just be
         #next one in the list. Remove the Nones.  There is probably a way to
         #make it so it doesn't have to pad
-        message = [x for x in self._pages.next() if x !=None] 
+        try:
+            next = self._pages.next() 
+        except StopIteration as e:
+            #if we are done then set the message to nothing
+            self.set_message([])
+            return self
+
+        message = [x for x in next if x !=None] 
         self.set_message(message)
         #TODO: need a test for this
-        return self.message
+        return self
 
     @property
     def response(self):
