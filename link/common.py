@@ -246,6 +246,15 @@ class APIObject(object):
         self._message = message
 
 
+from itertools import izip, chain, repeat
+
+def array_pagenate(n, iterable, padvalue=None):
+    """
+    takes an array like [1,2,3,4,5] and splits it into even chunks.  It will
+    pad the end with your default value to make fully even 
+    """
+    return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)
+
 class APIResponse(APIObject):
     """
     Used to help make standardized Json responses to API's
@@ -256,6 +265,8 @@ class APIResponse(APIObject):
                                         warnings = warnings)
         if seek:
             self.seek(*seek)
+
+        self._pages = None
     
     def seek(self, *kargs):
         raise NotImplementedError()
@@ -271,6 +282,26 @@ class APIResponse(APIObject):
 
     def __str__(self):
         return json.dumps(self.response, cls = APIEncoder)
+    
+    def pagenate(self, per_page=100):
+        """
+        Returns you an iterator of this response chunked into 
+        """
+        self._pages = array_pagenate(per_page, self.message)
+
+    def next_page(self):
+        """
+        Returns the next page that is in the generator
+        """
+        if not self._pages:
+            self.pagenate()
+
+        #this is sorta weird, but you want to make that object's message just be
+        #next one in the list. Remove the Nones.  There is probably a way to
+        #make it so it doesn't have to pad
+        message = [x for x in self._pages.next() if x !=None] 
+        self.set_message(message)
+        return self.message
 
     @property
     def response(self):
