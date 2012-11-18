@@ -251,8 +251,9 @@ from itertools import izip, chain, repeat
 def array_pagenate(n, iterable, padvalue=None):
     """
     takes an array like [1,2,3,4,5] and splits it into even chunks.  It will
-    pad the end with your default value to make fully even 
+    pad the end with your default value to make fully even.  
     """
+    #TODO: need a test for this
     return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)
 
 class APIResponse(APIObject):
@@ -287,6 +288,7 @@ class APIResponse(APIObject):
         """
         Returns you an iterator of this response chunked into 
         """
+        #TODO: need a test for this
         self._pages = array_pagenate(per_page, self.message)
 
     def next_page(self):
@@ -301,6 +303,7 @@ class APIResponse(APIObject):
         #make it so it doesn't have to pad
         message = [x for x in self._pages.next() if x !=None] 
         self.set_message(message)
+        #TODO: need a test for this
         return self.message
 
     @property
