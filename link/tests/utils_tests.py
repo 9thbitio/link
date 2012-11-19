@@ -15,6 +15,11 @@ class TestUtils(unittest.TestCase):
         bad_config = tst_config_path('bad_json.test_config')
         self.assertRaises(Exception, load_json_file, bad_config)
 
+    def test_pagenate(self):
+        data = [1,2,3,4,5]
+        data = [x for x in array_pagenate(4,data, padvalue = 5)]
+        self.assertEquals(data, [(1,2,3,4), (5,5,5,5)])
+
 if __name__ == '__main__':
     import nose
     nose.runmodule(argv=[__file__,'-vvs','-x','--pdb', '--pdb-failure'],

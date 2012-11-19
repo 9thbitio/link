@@ -29,3 +29,13 @@ def list_to_dataframe(rows, names):
         columns[k] = lib.convert_sql_column(v)
 
     return DataFrame(columns, columns=names)
+
+
+from itertools import izip, chain, repeat
+
+def array_pagenate(n, iterable, padvalue=None):
+    """
+    takes an array like [1,2,3,4,5] and splits it into even chunks.  It will
+    pad the end with your default value to make fully even.  
+    """
+    return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)

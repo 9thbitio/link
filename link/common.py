@@ -1,21 +1,21 @@
 import json
 
-class Node(object):
-    """
-    This is a node for your data
-    """
-    def __init__(self, data = None, key=None, hierarchy = None, rules = None):
-        self.key = key 
+#class Node(object):
+    #"""
+    #This is a node for your data
+    #"""
+    #def __init__(self, data = None, key=None, hierarchy = None, rules = None):
+        #self.key = key 
 
-        self.hierarchy = hierarchy
-        if hierarchy == None:
-            self.hierarchy = []
+        #self.hierarchy = hierarchy
+        #if hierarchy == None:
+            #self.hierarchy = []
 
-        self.data = data
-        super(Node, self).__init__()
+        #self.data = data
+        #super(Node, self).__init__()
 
-    def apply(self):
-        pass
+    #def apply(self):
+        #pass
 
 class Cacheable(object):
     """
@@ -51,25 +51,25 @@ class Cacheable(object):
         return self.cache.get(key)
 
     
-class Result(Node):
-    """
-    A result of a rule being applied to the data
-    """
-    def __init__(self, result, data=None, actions=None, key=None, hierarchy=None):
-        self.result = result
-        self.data = data
-        self.actions = actions
-        super(Result, self).__init__(key, hierarchy)
+#class Result(Node):
+    #"""
+    #A result of a rule being applied to the data
+    #"""
+    #def __init__(self, result, data=None, actions=None, key=None, hierarchy=None):
+        #self.result = result
+        #self.data = data
+        #self.actions = actions
+        #super(Result, self).__init__(key, hierarchy)
 
-class Rule(object):
-    """
-    A rule is applied to data and if a row of data passes then the actions are
-    taking actions are 
-    """
+#class Rule(object):
+    #"""
+    #A rule is applied to data and if a row of data passes then the actions are
+    #taking actions are 
+    #"""
 
-    def __init__(self, data = None, results= None):
-        self.data = data
-        self.actions = actions
+    #def __init__(self, data = None, results= None):
+        #self.data = data
+        #self.actions = actions
 
 class Single(object):
     """
@@ -82,69 +82,69 @@ class Single(object):
                 cls, *args, **kwargs)
         return cls._instance
 
-class Data(Single, Cacheable):
-    """
-    Encapsulates data from a database
-    """
-    def __init__(self, data = None,query = None, table = None):
-        self.table = table
-        self.data = data
-        self.query = query
-        super(Data, self).__init__()
+#class Data(Single, Cacheable):
+    #"""
+    #Encapsulates data from a database
+    #"""
+    #def __init__(self, data = None,query = None, table = None):
+        #self.table = table
+        #self.data = data
+        #self.query = query
+        #super(Data, self).__init__()
 
-    def __call__(self):
-        print self.table
-        print self.data
-        print self.query
+    #def __call__(self):
+        #print self.table
+        #print self.data
+        #print self.query
 
-    def __iter__(self):
-        """
-        If it's never set then throw an exception
-        """
-        if self.data == None:
-            raise Exception("No data to iterate through")
+    #def __iter__(self):
+        #"""
+        #If it's never set then throw an exception
+        #"""
+        #if self.data == None:
+            #raise Exception("No data to iterate through")
 
-        return self.data.__iter__()
+        #return self.data.__iter__()
 
-class DataSet(Single, Cacheable):
-    """
-    Encapsulates data from a database
-    """
-    def __init__(self, data = None):
-        self.data = data
-        super(Data, self).__init__()
+#class DataSet(Single, Cacheable):
+    #"""
+    #Encapsulates data from a database
+    #"""
+    #def __init__(self, data = None):
+        #self.data = data
+        #super(Data, self).__init__()
     
-    def __call__(self):
-        pass
+    #def __call__(self):
+        #pass
 
-    def cache_get(self):
-        pass
+    #def cache_get(self):
+        #pass
 
-    def __iter__(self):
-        """
-        If it's never set then throw an exception
-        """
-        if self.data == None:
-            raise Exception("No data to iterate through")
+    #def __iter__(self):
+        #"""
+        #If it's never set then throw an exception
+        #"""
+        #if self.data == None:
+            #raise Exception("No data to iterate through")
 
-        return self.data.__iter__()
+        #return self.data.__iter__()
 
-    def refresh(self):
-        """
-        A function that allows you to refresh a full dataset.  
-        """
-        pass
+    #def refresh(self):
+        #"""
+        #A function that allows you to refresh a full dataset.  
+        #"""
+        #pass
 
-class Action(object):
-    pass
+#class Action(object):
+    #pass
 
-class Actions(object):
+#class Actions(object):
 
-    def __init__(self, actions = None, query = None, table = None):
-        self.actions = actions
-        self.table = table
-        self.query = query
-        super(Actions, self).__init__()
+    #def __init__(self, actions = None, query = None, table = None):
+        #self.actions = actions
+        #self.table = table
+        #self.query = query
+        #super(Actions, self).__init__()
 
 import datetime
 
@@ -246,28 +246,23 @@ class APIObject(object):
         self._message = message
 
 
-from itertools import izip, chain, repeat
-
-def array_pagenate(n, iterable, padvalue=None):
-    """
-    takes an array like [1,2,3,4,5] and splits it into even chunks.  It will
-    pad the end with your default value to make fully even.  
-    """
-    #TODO: need a test for this
-    return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)
+from utils import array_pagenate
 
 class APIResponse(APIObject):
     """
     Used to help make standardized Json responses to API's
     """
     def __init__(self, message = None, warnings = None, error = None,
-                 seek = None):
+                 seek = None, response_id = None):
         super(APIResponse, self).__init__(message, error = error,
                                         warnings = warnings)
         if seek:
             self.seek(*seek)
 
         self._pages = None
+        #let's try this out and see if its any good. 
+        #each response get's a unique uuid
+        self.response_id = response_id 
     
     def seek(self, *kargs):
         raise NotImplementedError()
@@ -329,6 +324,9 @@ class APIResponse(APIObject):
 
         if self.warnings:
             _json['warnings'] =  self.warnings
+
+        if self.response_id:
+            _json['response_id'] = self.response_id
 
         return _json
 
