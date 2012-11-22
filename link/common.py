@@ -247,22 +247,31 @@ class APIObject(object):
 
 
 from utils import array_pagenate
+import types
 
 class APIResponse(APIObject):
     """
     Used to help make standardized Json responses to API's
     """
     def __init__(self, message = None, warnings = None, error = None,
-                 seek = None, response_id = None):
+                 seek = None, response_id = None,auth=None):
         super(APIResponse, self).__init__(message, error = error,
                                         warnings = warnings)
         if seek:
             self.seek(*seek)
 
         self._pages = None
+
+        if auth and isinstance(types.FunctionType):
+            #if its a function call then call it and set that to auth
+            self.auth = auth()
+            
         #let's try this out and see if its any good. 
         #each response get's a unique uuid
         self.response_id = response_id 
+
+    def auth(self):
+        raise NotImplementedError()
     
     def seek(self, *kargs):
         raise NotImplementedError()

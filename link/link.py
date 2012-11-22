@@ -361,10 +361,11 @@ class Wrapper(Cacheable):
         """
         wrap a special object if it exists
         """
-        #first look for a wrapper item named that
-        if name in self.__dict__:
-            print name
+        # first look if the Wrapper object itself has it
+        try:
             return self.__getatribute__(name)
+        except:
+            pass
 
         if self._wrapped is not None:
             #if it has a getattr then try that out otherwise go to getattribute
@@ -386,13 +387,11 @@ class Wrapper(Cacheable):
                 return cmd
             else:
                 wrapper = '%s.%s' % (self.wrap_name, name)
-                try:
-                    if self.wrap_name:
-                        return lnk(wrapper)
-                except Exception as e:
-                    raise e
-                    raise AttributeError("Error creating wrapper %s: %s" % (wrapper,
-                                         e.message))
+                
+                # I used to catch this but i find that it's stopping me from
+                # debuging
+                if self.wrap_name:
+                    return lnk(wrapper)
 
         raise AttributeError("No such attribute found %s" % name)
 
