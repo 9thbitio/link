@@ -179,7 +179,7 @@ class DBConnectionWrapper(Wrapper):
                             + "feature for your database ")
 
 
-class SqliteDBConnectionWrapper(DBConnectionWrapper):
+class SqliteDB(DBConnectionWrapper):
     """
     A connection wrapper for a sqlite database
     """
@@ -285,6 +285,8 @@ class SqliteDBConnectionWrapper(DBConnectionWrapper):
         cursor = self._wrapped.cursor()
         return DBCursorWrapper(cursor, query)()
 
+
+SqliteDBConnectionWrapper = SqliteDB
 
 class NetezzaDB(DBConnectionWrapper):
     
