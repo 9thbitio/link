@@ -363,7 +363,7 @@ class Wrapper(Cacheable):
         """
         # first look if the Wrapper object itself has it
         try:
-            return self.__getatribute__(name)
+            return self.__getattribute__(name)
         except:
             pass
 
