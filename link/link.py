@@ -378,7 +378,12 @@ class Wrapper(Cacheable):
                     return self._wrapped.__getattribute__(name)
                 except Exception as e:
                     raise AttributeError("No Such Attribute in wrapper %s" % name)
-       
+        
+        #then it is trying to unpickle itself and there is no setstate
+        #TODO: Clean this up, it's crazy and any changes cause bugs
+        if name == '__setstate__':
+            raise AttributeError("No such attribute found %s" % name)
+
         # i'm not sure I have to do the loaded thing
         if self.loaded:
             #try the command, if its nothing than try the wrapper
