@@ -1,6 +1,6 @@
 from link import Wrapper
 from link.utils import list_to_dataframe
-
+import defaults
 class DBCursorWrapper(Wrapper):
     """
     Wraps a select and makes it easier to tranform the data
@@ -379,7 +379,7 @@ class VerticaDB(DBConnectionWrapper):
 class MysqlDB(DBConnectionWrapper):
 
     def __init__(self, wrap_name=None, user=None, password=None, 
-                 host=None, database=None):
+            host=None, database=None, port=defaults.MYSQL_DEFAULT_PORT):
         """
         A connection for a Mysql Database.  Requires that
         MySQLdb is installed
@@ -439,7 +439,7 @@ class MysqlDB(DBConnectionWrapper):
 class PostgresDB(DBConnectionWrapper):
 
     def __init__(self, wrap_name=None, user=None, password=None, 
-                 host=None, database=None):
+                 host=None, database=None, port=defaults.POSTGRES_DEFAULT_PORT):
         """
         A connection for a Postgres Database.  Requires that
         psycopg2 is installed
@@ -453,6 +453,7 @@ class PostgresDB(DBConnectionWrapper):
         self.password = password
         self.host = host
         self.database = database
+        self.port = port
         super(PostgresDB, self).__init__(wrap_name=wrap_name)
 
     def create_connection(self):
@@ -471,19 +472,18 @@ class PostgresDB(DBConnectionWrapper):
                             lambda value, curs: float(value) if value is not None else None)
         psycopg2.extensions.register_type(DEC2FLOAT)
 
-        conn = psycopg2.connect(host=self.host, user=self.user, 
-                               db=self.database, passwd=self.password,
-                               conv=conv)
+        conn = psycopg2.connect(host=self.host, port=self.port,  user=self.user, 
+                                    password=self.password, database=self.database )
         return conn
 
     def use(self, database):
         return self.select('use %s' % database).data
 
     def databases(self):
-        return self.select('show databases').data
+        return self.select('select distinct table_catalog, table_schema from information_schema.tables').data
 
     def tables(self):
-        return self.select('show tables').data
+        return [ x[0] for x in self.select('select table_name from information_schema.tables where table_schema = (select current_schema())').data ]
 
     def now(self):
         # not sure that the [0][0] will always be true...but it works now
@@ -493,7 +493,7 @@ class PostgresDB(DBConnectionWrapper):
         """
         Create a shell connection to this mysql instance
         """
-        cmd = 'psql -A -u %s -p%s -h %s %s' % (self.user, self.password,
-                                                     self.host, self.database)
+        cmd = 'psql -U %s -W%s -h %s %s %s' % (self.user, self.password,
+                                                     self.host, port, self.database)
         self.run_command(cmd)
 
