@@ -436,3 +436,64 @@ class MysqlDB(DBConnectionWrapper):
                                                      self.host, self.database)
         self.run_command(cmd)
 
+class PostgresDB(DBConnectionWrapper):
+
+    def __init__(self, wrap_name=None, user=None, password=None, 
+                 host=None, database=None):
+        """
+        A connection for a Postgres Database.  Requires that
+        psycopg2 is installed
+
+        :param user: your user name for that database 
+        :param password: Your password to the database
+        :param host: host name or ip of the database server
+        :param database: name of the database on that server 
+        """
+        self.user = user
+        self.password = password
+        self.host = host
+        self.database = database
+        super(PostgresDB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the DbConnectionWrapper
+        class which get's called in it's initializer
+        """
+        import psycopg2
+        
+        # make it so that it uses floats instead of those Decimal objects
+        # these are really slow when trying to load into numpy arrays and 
+        # into pandas
+        DEC2FLOAT = psycopg2.extensions.new_type(
+                    psycopg2.extensions.DECIMAL.values,
+                        'DEC2FLOAT',
+                            lambda value, curs: float(value) if value is not None else None)
+        psycopg2.extensions.register_type(DEC2FLOAT)
+
+        conn = psycopg2.connect(host=self.host, user=self.user, 
+                               db=self.database, passwd=self.password,
+                               conv=conv)
+        return conn
+
+    def use(self, database):
+        return self.select('use %s' % database).data
+
+    def databases(self):
+        return self.select('show databases').data
+
+    def tables(self):
+        return self.select('show tables').data
+
+    def now(self):
+        # not sure that the [0][0] will always be true...but it works now
+        return self.select('select now()').data[0][0]
+
+    def __call__(self, query = None, outfile= None):
+        """
+        Create a shell connection to this mysql instance
+        """
+        cmd = 'psql -A -u %s -p%s -h %s %s' % (self.user, self.password,
+                                                     self.host, self.database)
+        self.run_command(cmd)
+
