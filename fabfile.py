@@ -237,9 +237,12 @@ def merge(branch=None, merge_to = 'master'):
         local('git checkout %s ' % merge_to)
         local('git merge %s ' % branch)
         if prompt('delete the old branch [y/N]') == 'y':
-            print "deleting branch"
+            print local('git branch -d %s' % branch)
         else:
             print "leaving branch where it is"
+    if prompt('push results [y/N]' ) == 'y':
+        local('git push')
+
 
 def tag_deploy(mark_stable=False):
     """
