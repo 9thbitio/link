@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from setuptools import setup
 import os
-from link.version import version_string, version
+from link.version import version_details, version
 
 dir = os.path.split(os.path.abspath(__file__))[0]
 
@@ -35,7 +35,7 @@ except:
 
 # call setup so it can build the package
 setup(name=NAME,
-      version=version_string,
+      version=version,
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
       license=LICENSE,
