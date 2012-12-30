@@ -135,8 +135,9 @@ def prompt_for_tag(default_offset=1, stable_only = False):
     """
     tags = tag_names(10, stable_only)
     print "Showing latest tags for reference"
-
-    default = tags[0] 
+    default = '0.0.1'
+    if tags:
+        default = tags[0] 
     (major, minor, build) = check_tag_format(default)
 
     build = build+default_offset
