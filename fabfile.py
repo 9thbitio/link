@@ -178,6 +178,11 @@ def prompt_for_tag(default_offset=1, stable_only = False):
     tag = tag or new_default
     return tag
 
+def push_to_pypi():
+    if prompt('would you like to tag a new version first [y/n]') == 'y':
+        tag()
+    run('python setup.py sdist upload')
+
 def prompt_commit():
     """
     prompts if you would like to commit
