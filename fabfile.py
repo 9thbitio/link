@@ -232,7 +232,14 @@ def merge(branch=None, merge_to = 'master'):
     if not branch:
         print "no branch specified, using current"
         branch = current_branch()
-    prompt('confirm merge with of branch %s to %s ' % (branch, merge_to))
+    if prompt('confirm merge with of branch %s to %s [y/N]' % (branch, merge_to)) == 'y':
+        prompt_commit()
+        local('git checkout %s ' % merge_to)
+        local('git merge %s ' % branch)
+        if prompt('delete the old branch [y/N]') == 'y':
+            print "deleting branch"
+        else:
+            print "leaving branch where it is"
 
 def tag_deploy(mark_stable=False):
     """
@@ -260,7 +267,7 @@ def mark_stable(tag, msg = None):
     retag(tag, '%s %s' % (STABLE_MSG, msg) )
 
 def current_branch():
-    current_branch = run('git branch | grep "^*"')
+    current_branch = local('git branch | grep "^*"', capture=True).lstrip('* ')
     print "Current branch is %s" % current_branch
     return current_branch
 
