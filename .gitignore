@@ -2,7 +2,6 @@
 *.pyc
 *.swp
 *.swo
-link/version.py
 .coverage
 build
 build/*

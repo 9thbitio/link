@@ -22,6 +22,8 @@ env.use_ssh_config=True
 TAG_REGEX = re.compile('^[0-9]+\.[0-9]+\.[0-9]+')
 STABLE_MSG = '**stable**'
 
+LINK_CODE_DIR = os.path.split(os.path.abspath(__file__))[0]
+
 def dir_code_base():
     """
     If you are using any localhost then it will use the current directory.
@@ -129,6 +131,35 @@ def check_tag_format(tag):
         abort("""Must be of the form <major_version>.<minor>.<maintence>, like
               0.0.1. Only integers allowed""")
 
+def write_version(version):
+    """
+    Write out the version python file to the link directory before installing
+    
+    version needs to be a list or tuple of the form (<major>, <minor>, <build>)
+    or a string in the format <major>.<minor>.<build> all ints
+    """
+    cnt = "version = '%s'\nversion_details = %s\n"
+    file ='%s/link/version.py' % LINK_CODE_DIR
+    
+    if isinstance(version, str):
+        try:
+            version = map(int, version.split('.'))
+        except:
+            raise Exception("Version string must be in the format <major>.<minor>.<build>")
+
+    if not isinstance(version, (list, tuple)) and len(version)!=3:
+        raise Exception('invalid version %s' % version)
+
+    version = tuple(version)
+
+    a = open(file, 'w')
+    version_string = '.'.join(map(str,version))
+
+    try:
+        a.write(cnt % (version_string, version))
+    finally:
+        a.close()
+
 def prompt_for_tag(default_offset=1, stable_only = False):
     """
     Prompt for the tag you want to use, offset for the default by input
@@ -164,11 +195,14 @@ def tag(mark_stable=False):
     Tag a release, will prompt you for the tag version.  You can mark it as
     stable here as well
     """
+    tag = prompt_for_tag()
+    print "writing this tag version to version.py before commiting"
+    write_version(tag)
+
     print 
     _commit = prompt_commit()
     print
     
-    tag = prompt_for_tag()
 
     if not _commit and not tag:
         print 
