@@ -1,6 +1,7 @@
 from link import Wrapper
 from link.utils import list_to_dataframe
 import defaults
+
 class DBCursorWrapper(Wrapper):
     """
     Wraps a select and makes it easier to tranform the data
@@ -494,6 +495,6 @@ class PostgresDB(DBConnectionWrapper):
         Create a shell connection to this mysql instance
         """
         cmd = 'psql -U %s -W%s -h %s %s %s' % (self.user, self.password,
-                                                     self.host, port, self.database)
+                                                     self.host, self.port, self.database)
         self.run_command(cmd)
 
