@@ -2,8 +2,9 @@
 Link - Beta 
 ===================
 
-Link is NOT a new technology, but helps link together many well established (opensource)
-technologies like Requests, Pandas, MysqlDB and Sqlite3...to begin with
+Link was designed to deal with the growing number of databases, apis and
+environments needed to grow a technology and a team.  Link provides a simple way
+to configure and connect to all of these different technologies.  
 
 Goals:
     
@@ -31,14 +32,19 @@ You can also clone and install it::
 Requirements:
 ^^^^^^^^^^^^^^
 
-Depends on what wrappers you are trying to use.  At the very least you need
-requests if you are using the apiwrappers.  In addition, these packages are
-used::
+I've attempted to make it so that no packages are required to actually install
+link.  However, most of the wrappers that are available depend on other
+opensource packages to work.  For example, to connect to a mysql database you
+will be using the MysqlDB wrapper, which requires that you have MySqldb
+installed.  Here is a list of packages that may be used.::
 
-    MySqldb
-    numpy
-    pandas
+    mysql-python ==> MysqlDB
+    requests ==> Any APIWrapper
+    happybase ==> HbaseDB
+    pymongo ==> MongoDB
+    pyscopg ==> PostgresDB
 
+You should be able to pip or easy_install any of these packages very easily
 
 Using Link:
 ^^^^^^^^^^^^
@@ -78,7 +84,7 @@ will be explained later.  For now, Here is an example JSON config::
         },
         "dbs":{
            "my_db": {
-               "wrapper": "MysqlDBConnectionWrapper",
+               "wrapper": "MysqlDB",
                "host": "mysql-master.123fakestreet.net",
                "password": "<password>",
                "user": "<user>",
@@ -129,40 +135,70 @@ resources it will create the object and pass it the parameters you have
 configured.  The wrappers that ship with link are::
     
     APIRequestWrapper
-    MysqlDBConnectionWrapper
-    SqliteDBConnectionWrapper
+    MysqlDB
+    SqliteDB
+    HbaseDB
+    MongoDB
 
 Note, these have dependancy package requirements for them to work
+
+The lnk Singleton
+^^^^^^^^^^^^^^^^^^^
+
+When you get started you want to import lnk, which is a singleton that contains
+all of the configuration details from ~/.link/link.config::
+
+    In [4]: from link import lnk
+
+**NOTE:**: If your config file is not proper json you will get an error when
+trying to import lnk
+
+You can look at what is in your configuration using the config() function, which will return a
+dictionary.
+    
+        In [3]: lnk.config().keys()
+        Out[3]: ['dbs', 'apis']
 
 Accessing Configured Resources
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-You can get one of these objects by calling on lnk.  lnk is a singleton that
-wraps your configuration to auto generate objects::
+The lnk object let's you treat everything in your configuration as an object.
+For instance, let's say we have this as our configuration::
 
-        In [4]: api = lnk("apis.my_api")
-
-        In [5]: api 
-        Out[5]: <apiwrappers.APIRequestWrapper at 0x105266e10>
-
-        In [9]: api.get('/api_service?param=blah').content  
-        Out[9]: '{"total":0,"rank":"0","success":true}'
-
-In addition, you can treat everything in your config as if it is an object.
-Under the hood it is calling the same thing as lnk("apis.my_api").  Note that
-every time you **call this it makes a NEW APIRequestWrapper**, so set it to a
-variable.  You will see below in the iPython integration why this is so powerful::
+    {
+        "apis": {
+           "my_api": {
+               "wrapper": "APIRequestWrapper",
+               "base_url": "http://123fakestreet.net",
+               "user": "<user>",
+               "password": "<password>"
+           }
+    }
+ 
+I can access my_api by calling lnk.apis.my_api.  This may seem strange, but lnk
+under the hood will cascade through the configuration and create objects::
     
+        In [3]: from link import lnk
+
         # Save my_api to the api variable to avoid creating many copies
         In [4]: api = lnk.apis.my_api
 
         In [5]: api 
         Out[5]: <apiwrappers.APIRequestWrapper at 0x10526f390>
 
+**Note**: every time you do **this it makes a NEW APIRequestWrapper**, so set it to a
+variable.  You will see below in the iPython integration why this is so powerful::
+
+
 API Responses to Json and XML:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The APIResponseWrapper has convience functions for json and xml responses::
+
+        In [3]: from link import lnk
+
+        # Save my_api to the api variable to avoid creating many copies
+        In [4]: api = lnk.apis.my_api
 
         In [9]: resp = api.get('/api_service?param=blah')
 
@@ -182,16 +218,49 @@ The APIResponseWrapper has convience functions for json and xml responses::
 
 For xml there is an xml property.  It will return the results as pythons xml.etree.cElementTree.
 
+DBConnections
+^^^^^^^^^^^^^^^
+
+Database connections work the same way::
+
+    In [3]: from link import lnk
+
+    In [35]: my_db = lnk.dbs.my_db
+
+    In [36]: data = my_db.select('select id from my_table')
+    
+    #returns a cursor wrapper which has some conviennce funtions
+    In [10]: data
+    Out[10]: <link.wrappers.dbwrappers.DBCursorWrapper at 0x10b318a50>
+
+        In [12]: [x for x in data]
+        Out[12]: 
+        [(6L,),
+        (4L,),
+        (9L,),
+        (8L,),
+        (7L,),
+        (3L,),
+        (2L,),
+        (1L,),
+        (12L,),
+        (13L,),
+        (5L,),
+        (10L,),
+        (11L,),
+        (14L,)]
+
+
 Queries to Pandas Dataframes
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 If you don't know about pandas you are missing out (make sure its installed).  
-You can select any query into Pandas DataFrames using the select_dataframe function
+You can select any query into Pandas DataFrames using the select function
 instead of the select function of a DBConnectionWrapper::
 
     In [35]: my_db = lnk.dbs.my_db
 
-    In [36]: df = my_db.select_dataframe('select * from my_table')
+    In [36]: df = my_db.select('select * from my_table').as_dataframe()
 
 pandas allows you to do groupbys, sums, aggregations, joins...and much more in
 memory.  For more information see the pandas homepage (TODO put link in here)
@@ -301,6 +370,11 @@ Same with mysql::
 When you exit you are right back in your ipython session, like nothing happened
 at all. 
 
+
+================
+SUPER BETA
+================
+
 Create Lazy Commands:
 ^^^^^^^^^^^^^^^^^^^^^^
 
@@ -344,40 +418,4 @@ In the IPython I can easily start and stop hadoop and hbase::
     localhost: starting regionserver, logging to
     /var/hbase/bin/../logs/hbase-regionserver.local.out
     
-    In [5]:
-
-Create your Own Links with Custom Wrappers
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Ideally, I will be able to wrap as many commonly used technologies as possible.
-However, I want to open up link for others to write their own wrappers.  I saw a
-really interesting wrapper that overrides the APIRequestWrapper to make calls to
-graphite, and turns rawData=true calls into DataFrames. 
-
-
-Doesn't Exist yet
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Installing your wrappers
-^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Link comes with a commandline utility that you can use to install or upgrade
-your wrappers.
-
-**Install from local**
-
-If you have a python file that contains wrappers, or a full package you can
-install it on your command-line by typing::
-
-    lnk --install=<path_to_file_or_package>
-
-**Install from git**
-
-Installing from git is also easy::
-
-    lnk --install_git=<location_of_git_repo>
-
-By default these are installed into your ~/.link/wrappers directory, not to the
-entire box.  You can use the -g flag to install globally for all users, and it
-will go into the wrappers directory inside link (in python's site-packages)
 
