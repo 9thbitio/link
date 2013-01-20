@@ -229,6 +229,9 @@ def tag(mark_stable=False):
     return tag
  
 def merge(branch=None, merge_to = 'master'):
+    """
+    Merge your changes and delete the old branch
+    """
     if not branch:
         print "no branch specified, using current"
         branch = current_branch()
@@ -236,13 +239,13 @@ def merge(branch=None, merge_to = 'master'):
         prompt_commit()
         local('git checkout %s ' % merge_to)
         local('git merge %s ' % branch)
-        if prompt('delete the old branch [y/N]') == 'y':
-            print local('git branch -d %s' % branch)
+        if prompt('delete the old branch locally and remotely? [y/N]') == 'y':
+            local('git branch -d %s' % branch)
+            local('git push origin :%s' % branch)
         else:
             print "leaving branch where it is"
     if prompt('push results [y/N]' ) == 'y':
         local('git push')
-
 
 def tag_deploy(mark_stable=False):
     """

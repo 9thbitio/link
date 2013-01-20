@@ -64,6 +64,7 @@ class DBCursorWrapper(Wrapper):
 
         return self
 
+
 class DBConnectionWrapper(Wrapper):
     """
     wraps a database connection and extends the functionality
@@ -178,6 +179,12 @@ class DBConnectionWrapper(Wrapper):
             raise Exception("the default select now() does not work on this database"
                             + " override this function if you would like this "
                             + "feature for your database ")
+    @property
+    def command(self):
+        """
+        Here is the command for doing the mysql command
+        """
+        raise NotImplementedError('no shell command for using this database')
 
 
 class SqliteDB(DBConnectionWrapper):
@@ -334,49 +341,8 @@ class VerticaDB(DBConnectionWrapper):
                        )
         #connect to a netezza database, you need ansi=True or it's all garbled
         return pyodbc.connect(connection_str, ansi=True)
-
-#class MysqlDB(DBConnectionWrapper):
-
-    #def __init__(self, wrap_name=None, user=None, password=None, 
-                 #host=None, database=None):
-        #"""
-        #A connection for a Mysql Database.  Requires that
-        #MySQLdb is installed
-
-        #:param user: your user name for that database 
-        #:param password: Your password to the database
-        #:param host: host name or ip of the database server
-        #:param database: name of the database on that server 
-        #"""
-        #self.user = user
-        #self.password = password
-        #self.host = host
-        #self.database = database
-        #super(MysqlDB, self).__init__(wrap_name=wrap_name)
-
-    #def create_connection(self):
-        #"""
-        #Override the create_connection from the DbConnectionWrapper
-        #class which get's called in it's initializer
-        #"""
-        #import pyodbc
-        #connection_str=(
-                        #"DRIVER={%s};SERVER=%s;DATABASE=%s;UID=%s;PWD=%s"
-                        #% 
-                        #("MySQL",self.host, self.database, self.user, self.password)
-                       #)
-        ##connect to a netezza database, you need ansi=True or it's all garbled
-        #return pyodbc.connect(connection_str)
-
-    #def __call__(self, query = None, outfile= None):
-        #"""
-        #Create a shell connection to this mysql instance
-        #"""
-        #cmd = 'mysql -A -u %s -p%s -h %s %s' % (self.user, self.password,
-                                                     #self.host, self.database)
-        #self.run_command(cmd)
-
     
+
 class MysqlDB(DBConnectionWrapper):
 
     def __init__(self, wrap_name=None, user=None, password=None, 
@@ -428,14 +394,15 @@ class MysqlDB(DBConnectionWrapper):
     def now(self):
         # not sure that the [0][0] will always be true...but it works now
         return self.select('select now()').data[0][0]
-
-    def __call__(self, query = None, outfile= None):
+    
+    @property
+    def command(self):
         """
-        Create a shell connection to this mysql instance
+        Here is the command for doing the mysql command
         """
-        cmd = 'mysql -A -u %s -p%s -h %s %s' % (self.user, self.password,
+        return  'mysql -A -u %s -p%s -h %s %s' % (self.user, self.password,
                                                      self.host, self.database)
-        self.run_command(cmd)
+
 
 class PostgresDB(DBConnectionWrapper):
 

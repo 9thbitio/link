@@ -8,7 +8,35 @@ from common import Cacheable
 
 #this get's the current directory of link
 lnk_dir = os.path.split(os.path.abspath(__file__))[0]
+class Callable(object):
+    """
+    A callable object that has a run_shell method
+    """
+    @property
+    def command(self):
+        """
+        Here is the command for doing the mysql command
+        """
+        raise NotImplementedError('You have not defined a command for this Callable Object')
 
+    def __call__(self, command = None, wait = True):
+        """
+        When you call this Callable it will run the command.  The command can
+        either be a string to run on the shell or a function to run in python 
+
+        Right now it only supports string commands for the shell
+        """
+        cmd = command or self.command
+        #import pdb; pdb.set_trace()
+
+        if cmd:
+            p= Popen(cmd,shell=True)
+
+            if wait:
+                p.wait()
+            return p
+
+        
 class Commander(object):
     """
     Given a dictionary of commands the commander can run them very easily
@@ -176,9 +204,11 @@ class Link(object):
         try:
             wrapper_mod = __import__(mod_or_package, fromlist = ['*'])
         except ImportError as e:
+            #TODO: not sure how to handle this error
             raise e
             raise ImportError("No such wrapper in the PYTHONPATH: %s" %
                               e.message)
+
         #get all classes by name and put them into a dictionary
         wrapper_classes = dict([(name,cls) for name, cls in
                                 inspect.getmembers(wrapper_mod) if
@@ -250,12 +280,7 @@ class Link(object):
         try:
             return self.__getattribute__(name)
         except Exception as e:
-            try:
-                return self(wrap_name = name, **self.__config[name].copy())
-            except:
-                raise e
-                raise Exception('Link has no attribute %s and none is configured'
-                                % name)
+            return self(wrap_name = name, **self.__config[name].copy())
     
     def config(self, config_lookup = None):
         """
@@ -336,7 +361,7 @@ class Link(object):
 
 lnk = Link.instance()
 
-class Wrapper(Cacheable):
+class Wrapper(Callable):
     """
     The wrapper wraps a piece of the configuration.  
     """
@@ -344,6 +369,7 @@ class Wrapper(Cacheable):
     cmdr = None
 
     def __init__(self, wrap_name = None, wrapped_object=None, **kwargs):
+        super(Wrapper, self).__init__()
         self.wrap_name = wrap_name
         self._wrapped = wrapped_object
 
@@ -384,71 +410,67 @@ class Wrapper(Cacheable):
         if name == '__setstate__':
             raise AttributeError("No such attribute found %s" % name)
 
-        # i'm not sure I have to do the loaded thing
-        if self.loaded:
-            #try the command, if its nothing than try the wrapper
-            cmd = self(name)
-            if cmd:
-                return cmd
-            else:
-                wrapper = '%s.%s' % (self.wrap_name, name)
-                
-                # I used to catch this but i find that it's stopping me from
-                # debuging
-                if self.wrap_name:
-                    return lnk(wrapper)
+        #call the wrapper to create a new one
+        wrapper = '%s.%s' % (self.wrap_name, name)
+        if self.wrap_name:
+            return lnk(wrapper)
 
         raise AttributeError("No such attribute found %s" % name)
 
     def config(self):
         return self.__link_config__
 
-    def command(self, name, args=None, commander=None, base_dir=None):
-        """
-        Run a command for a commander
-        """
-        # default to the script commander as default behavior
-        # need to k
-        if not commander:
-            commander = self.cmdr
+    #def command(self, name, args=None, commander=None, base_dir=None):
+        #"""
+        #Run a command for a commander
+        #"""
+        ## default to the script commander as default behavior
+        ## need to k
+        #if not commander:
+            #commander = self.cmdr
         
-        base_dir = base_dir or ''
-        run_parameters = []
-        if args and isinstance(args, list): 
-            run_parameters = args[1:]
-        try:
-            return commander.run_command(name, *run_parameters,
-                                         base_dire=base_dir)
-        except Exception as e:
-            return None
+        #base_dir = base_dir or ''
+        #run_parameters = []
+        #if args and isinstance(args, list): 
+            #run_parameters = args[1:]
+        #try:
+            #return commander.run_command(name, *run_parameters,
+                                         #base_dire=base_dir)
+        #except Exception as e:
+            #return None
+    
+    # This was over complicated.  I am moving to a new model, but might want to 
+    # steal some concepts from this at some point
+    #def __call__(self, *kargs, **kwargs):
+        #"""
+        #by default a wrapper with a __cmd__ will be run on the command line
 
-    def __call__(self, *kargs, **kwargs):
-        """
-        by default a wrapper with a __cmd__ will be run on the command line
+        #prefer configured commands in $LNK_HOME/link.config,
+        #then lnk scripts (in <lnk_dir>/scripts, then user scripts (cwd scripts)
+        #"""
+        ##run the command specified by the first param, else run the default
+        ##cammond
+        #print "in call"
+        #print kargs
+        ##import pdb; pdb.set_trace()
+        #if kargs and len(kargs)>0:
 
-        prefer configured commands in $LNK_HOME/link.config,
-        then lnk scripts (in <lnk_dir>/scripts, then user scripts (cwd scripts)
-        """
-        #run the command specified by the first param, else run the default
-        #cammond
-        if kargs and len(kargs)>0:
+            #if self.commander.has_command(kargs[0]):
+                #return self.command(kargs[0], kargs[1:],  
+                                        #commander = self.commander)
 
-            if self.commander.has_command(kargs[0]):
-                return self.command(kargs[0], kargs[1:],  
-                                        commander = self.commander)
+            #elif self.lnk_script_commander.has_command(kargs[0]):
+                #return self.command(kargs[0], kargs[1:], commander =
+                                    #self.lnk_script_commander)
 
-            elif self.lnk_script_commander.has_command(kargs[0]):
-                return self.command(kargs[0], kargs[1:], commander =
-                                    self.lnk_script_commander)
+            ##TODO: this won't work if they are moving aronud
+            ## we don't know what possible commands there are
+            #elif self.script_commander.has_command(kargs[0]):
+                #return self.command(kargs[0], kargs[1:], commander =
+                                    #self.script_commander, base_dir =
+                                    #os.getcwd())
 
-            #TODO: this won't work if they are moving aronud
-            # we don't know what possible commands there are
-            elif self.script_commander.has_command(kargs[0]):
-                return self.command(kargs[0], kargs[1:], commander =
-                                    self.script_commander, base_dir =
-                                    os.getcwd())
-
-        return None
+        #return None
 
 
 

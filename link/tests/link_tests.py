@@ -1,6 +1,6 @@
 import unittest
 import os
-from link import Link
+from link import Link, Wrapper
 from link.utils import load_json_file
 from link.tests import *
 
@@ -98,7 +98,21 @@ class TestLazyFunctions(unittest.TestCase):
         self.assertTrue(func.commander.has_command("__default__"))
         self.assertTrue(func.commander.has_command("function"))
         self.assertFalse(func.commander.has_command("aeuoaeaosuoesth"))
-        
+    
+class MockCallableWrapper(Wrapper):
+    
+    def __init__(self):
+        super(MockCallableWrapper, self).__init__()
+
+    @property
+    def command(self):
+        return 'echo'
+
+class MockNonCallableWrapper(Wrapper):
+    
+    def __init__(self):
+        super(MockNonCallableWrapper, self).__init__()
+
 
 class TestWrapper(unittest.TestCase):
 
@@ -106,34 +120,14 @@ class TestWrapper(unittest.TestCase):
         lnk.fresh(config_file=config1_path)
         self.wrapper = lnk.test_wrapper
     
-    def test_link_scripts(self):
-        ran = self.wrapper('test_script')
+    def test_call(self):
+        ran = MockCallableWrapper()('echo')
         self.assertTrue(ran!=None)
 
-    def test_link_commands(self):
-        ran = self.wrapper('test_command')
+    def test_call_default(self):
+        ran = MockCallableWrapper()()
         self.assertTrue(ran!=None)
-
-    def test_link_cwd_scripts(self):
-        """
-        test that you can run scripts in the current working directory.  you
-        must be in a directory where scripts/test_local_scripts exists 
-        """
-        ran = self.wrapper('test_cwd_script')
-        self.assertTrue(ran!=None)
-
-    #def test_link_command_priorities(self):
-        #"""
-        #test that we prioritize lnk commands, then lnk scripts then cwd scripts 
-        #"""
-        #ran = self.wrapper('test_priority_1')
-        #self.assertTrue(ran!=None)
-
-        #ran = self.wrapper('test_priority_2')
-        #self.assertTrue(ran!=None)
-
-        #ran = self.wrapper('test_priority_3')
-        #self.assertTrue(ran!=None)
+        self.assertRaises(NotImplementedError, MockNonCallableWrapper())
 
 
 if __name__ == '__main__':
