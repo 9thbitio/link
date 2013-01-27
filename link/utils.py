@@ -1,4 +1,16 @@
 import os
+# -*- coding: utf-8 -*-
+
+"""
+link.utils
+~~~~~~~~~~~~
+
+Commonly used utility functions in the link code
+
+:copyright: (c) 2013 by David Himrod
+:license: Apache2, see LICENSE for more details.
+
+"""
 
 def load_json_file(file_name):
     """
@@ -17,6 +29,13 @@ def load_json_file(file_name):
         raise Exception("Error json decoding file %s" % file_name)
 
 def list_to_dataframe(rows, names):
+    """
+    Turns a rows of data into a dataframe and gives them the column names
+    specified
+
+    :params rows: the data you want to put in the dataframe
+    :params names: the column names for the dataframe
+    """
     from pandas import DataFrame
     try:
         import pandas._tseries as lib
