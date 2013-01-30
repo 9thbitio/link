@@ -1,22 +1,19 @@
 #!/usr/bin/env python
 from setuptools import setup
 import os
-from link.version import version_details, version
+import link
 
 dir = os.path.split(os.path.abspath(__file__))[0]
 
 
-NAME = 'link'
 DESCRIPTION = "Easy and consistent access to the objects you care about"
 LONG_DESCRIPTION = "Easy and consistent access to the objects you care about"
 URL = ''
-LICENSE = 'MIT'
 DOWNLOAD_URL = ''
 CLASSIFIERS = ['Development Status :: 4 - Beta',     
                'Programming Language :: Python',
                'Programming Language :: Python :: 2'
               ]
-AUTHOR = ''
 EMAIL = ''
 SETUP_ARGS = {}
 DATA_FILES = [('link/configs', ['link/configs/link.config'])]
@@ -34,13 +31,13 @@ except:
 # package is
 
 # call setup so it can build the package
-setup(name=NAME,
-      version=version,
+setup(name=link.__title__,
+      version=link.__version__,
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
-      license=LICENSE,
+      license=link.__license__,
       maintainer_email=EMAIL,
-      maintainer=AUTHOR,
+      maintainer=link.__author__,
       url=URL,
       packages=['link', 'link.wrappers', 'link.configs'],
       #package_data = {'link.configs': ['link.configs/*config']},

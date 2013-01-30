@@ -34,9 +34,18 @@ Sample Code::
 :license: Apache2, see LICENSE for more details.
 
 """
-#import numpy as np
-#from pandas import DataFrame
-import link
-from link import Link, Wrapper, lnk
+#import all of this version information
+__version__ = '0.1.2'
+__author__ = 'David Himrod'
+__license__ = 'Apache 2.0'
+__copyright__ = 'Copyright 2013 David Himrod'
+__title__ = 'link'
+
+lnk = None
+#i don't like this but i can't figure out a better way to do it yet
+try:
+    from .link import Link, Wrapper, lnk
+except:
+    pass
+
 from common import *
-#from wrappers.http import Response

@@ -216,8 +216,8 @@ class Link(object):
             return cls.LNK_CONFIG
         
         raise Exception("""No config found.  Set environment variable LNK_DIR to
-                        point to your link configuration directory or create a
-                        .link/link.config file in your HOME directory""")
+                        #point to your link configuration directory or create a
+                        #.link/link.config file in your HOME directory""")
 
     @classmethod
     def instance(cls):
@@ -397,6 +397,7 @@ class Link(object):
         except:
             print "error moving files"
 
+
 lnk = Link.instance()
 
 class Wrapper(Callable):
@@ -457,59 +458,6 @@ class Wrapper(Callable):
 
     def config(self):
         return self.__link_config__
-
-    #def command(self, name, args=None, commander=None, base_dir=None):
-        #"""
-        #Run a command for a commander
-        #"""
-        ## default to the script commander as default behavior
-        ## need to k
-        #if not commander:
-            #commander = self.cmdr
-        
-        #base_dir = base_dir or ''
-        #run_parameters = []
-        #if args and isinstance(args, list): 
-            #run_parameters = args[1:]
-        #try:
-            #return commander.run_command(name, *run_parameters,
-                                         #base_dire=base_dir)
-        #except Exception as e:
-            #return None
-    
-    # This was over complicated.  I am moving to a new model, but might want to 
-    # steal some concepts from this at some point
-    #def __call__(self, *kargs, **kwargs):
-        #"""
-        #by default a wrapper with a __cmd__ will be run on the command line
-
-        #prefer configured commands in $LNK_HOME/link.config,
-        #then lnk scripts (in <lnk_dir>/scripts, then user scripts (cwd scripts)
-        #"""
-        ##run the command specified by the first param, else run the default
-        ##cammond
-        #print "in call"
-        #print kargs
-        ##import pdb; pdb.set_trace()
-        #if kargs and len(kargs)>0:
-
-            #if self.commander.has_command(kargs[0]):
-                #return self.command(kargs[0], kargs[1:],  
-                                        #commander = self.commander)
-
-            #elif self.lnk_script_commander.has_command(kargs[0]):
-                #return self.command(kargs[0], kargs[1:], commander =
-                                    #self.lnk_script_commander)
-
-            ##TODO: this won't work if they are moving aronud
-            ## we don't know what possible commands there are
-            #elif self.script_commander.has_command(kargs[0]):
-                #return self.command(kargs[0], kargs[1:], commander =
-                                    #self.script_commander, base_dir =
-                                    #os.getcwd())
-
-        #return None
-
 
 
 def install_ipython_completers():  # pragma: no cover

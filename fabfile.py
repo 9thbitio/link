@@ -138,27 +138,29 @@ def write_version(version):
     version needs to be a list or tuple of the form (<major>, <minor>, <build>)
     or a string in the format <major>.<minor>.<build> all ints
     """
-    cnt = "version = '%s'\nversion_details = %s\n"
-    file ='%s/link/version.py' % LINK_CODE_DIR
+    file_name ='link/__init__.py'
+    init = open(file_name)
+    init_read = init.readlines()
+    init.close()
+    version_line =  [idx for idx, x in enumerate(init_read) if '__version__ = ' in x]
+    if len(version_line)>1:
+        raise Exception('version is in there more than once')
     
     if isinstance(version, str):
         try:
-            version = map(int, version.split('.'))
+            version_split = map(int, version.split('.'))
         except:
             raise Exception("Version string must be in the format <major>.<minor>.<build>")
 
-    if not isinstance(version, (list, tuple)) and len(version)!=3:
+    if not isinstance(version_split, (list, tuple)) or len(version_split)!=3:
         raise Exception('invalid version %s' % version)
 
-    version = tuple(version)
-
-    a = open(file, 'w')
-    version_string = '.'.join(map(str,version))
-
+    init_read[version_line[0]] = "__version__ = '%s'\n" % version
+    init = open(file_name, 'w')
     try:
-        a.write(cnt % (version_string, version))
+        init.write(''.join(init_read))
     finally:
-        a.close()
+        init.close()
 
 def prompt_for_tag(default_offset=1, stable_only = False):
     """

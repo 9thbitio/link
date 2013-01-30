@@ -21,7 +21,7 @@ The latest stable can be installed using easy_install or pip::
 
 or::
 
-    sudo easy_install install link
+    sudo easy_install link
 
 You can also clone and install it::
 
