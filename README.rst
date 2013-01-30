@@ -1,6 +1,5 @@
 
-I am in the process of moving all of the docs to ReadTheDocs. Please visit these
-new docs `here <https://link-docs.readthedocs.org/en/latest/>`_ 
+
 
 ===================
 Link - Beta 
@@ -15,6 +14,13 @@ Goals:
     * Create an easy and simple development environment and process
     * Make configuration easy for complex environments
     * Allow people wrap their own apis, dbs, and other pieces of the system and plug them into link
+
+Docs:
+^^^^^^^^^
+
+I am in the process of moving all of the docs to ReadTheDocs. Please visit these
+new docs `here <https://link-docs.readthedocs.org/en/latest/>`_ 
+
 
 Installation:
 ^^^^^^^^^^^^^^
