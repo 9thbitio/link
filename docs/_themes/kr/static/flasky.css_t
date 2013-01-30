@@ -14,8 +14,9 @@
 /* -- page layout ----------------------------------------------------------- */
 
 body {
-    font-family: 'goudy old style', 'minion pro', 'bell mt', Georgia, 'Hiragino Mincho Pro';
-    font-size: 17px;
+	font-family: "Verdana", Arial, sans-serif;
+   /*font-family: 'goudy old style', 'minion pro', 'bell mt', Georgia, 'Hiragino Mincho Pro';*/
+    font-size: 15px;
     background-color: white;
     color: #000;
     margin: 0;
@@ -82,7 +83,7 @@ div.sphinxsidebar a:hover {
 }
 
 div.sphinxsidebar {
-    font-size: 14px;
+    font-size: 12px;
     line-height: 1.5;
 }
 
@@ -100,14 +101,14 @@ div.sphinxsidebar h3,
 div.sphinxsidebar h4 {
     font-family: 'Garamond', 'Georgia', serif;
     color: #444;
-    font-size: 24px;
+    font-size: 18px;
     font-weight: normal;
     margin: 0 0 5px 0;
     padding: 0;
 }
 
 div.sphinxsidebar h4 {
-    font-size: 20px;
+    font-size: 17px;
 }
 
 div.sphinxsidebar h3 a {

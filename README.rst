@@ -1,3 +1,7 @@
+
+I am in the process of moving all of the docs to ReadTheDocs. Please visit these
+new docs `here <https://link-docs.readthedocs.org/en/latest/>`_ 
+
 ===================
 Link - Beta 
 ===================
