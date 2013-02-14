@@ -67,7 +67,6 @@ class HbaseDB(NoSqlConnectionWrapper):
     """
     A connection wrapper for a sqlite database
     """
-    import happybase 
     #from hbase import Hbase 
 
     def __init__(self, wrap_name=None, host=None, version='0.92'):
@@ -88,7 +87,8 @@ class HbaseDB(NoSqlConnectionWrapper):
         Override the create_connection from the DbConnectionWrapper
         class which get's called in it's initializer
         """
-        return self.happybase.Connection(self.host,
+        import happybase 
+        return happybase.Connection(self.host,
                                          port=self.port,compat=self.version)
 
     def __call__(self):
