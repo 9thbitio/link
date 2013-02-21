@@ -17,7 +17,7 @@ CLASSIFIERS = ['Development Status :: 4 - Beta',
 EMAIL = ''
 SETUP_ARGS = {}
 DATA_FILES = [('link/configs', ['link/configs/link.config'])]
-REQUIRES = []
+REQUIRES = ['requests>=0.10']
 
 try:
     import numpy
