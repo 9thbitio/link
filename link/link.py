@@ -242,10 +242,7 @@ class Link(object):
         try:
             wrapper_mod = __import__(mod_or_package, fromlist = ['*'])
         except ImportError as e:
-            #TODO: not sure how to handle this error
-            raise e
-            raise ImportError("No such wrapper in the PYTHONPATH: %s" %
-                              e.message)
+            raise
 
         #get all classes by name and put them into a dictionary
         wrapper_classes = dict([(name,cls) for name, cls in
