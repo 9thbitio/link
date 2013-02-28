@@ -86,7 +86,8 @@ class APIRequestWrapper(Wrapper):
         self.user = user
         self.password = password
         self.response_wrapper = response_wrapper 
-        sess = requests.session(headers = self.headers)
+        sess = requests.session()
+        sess.headers = self.headers
         super(APIRequestWrapper, self).__init__(wrap_name, sess)
         sess.auth = self.authenticate() 
     
@@ -145,7 +146,8 @@ class APIRequestWrapper(Wrapper):
         """
         clears the session and reauths
         """
-        sess = requests.session(headers = self.headers)
+        sess = requests.session()
+        sess.headers = self.headers
         self._wrapped = sess
         self._wrapped = self.authenticate()
 
