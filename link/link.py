@@ -256,9 +256,9 @@ class Link(object):
         """
         #load all the standard ones first
         self.wrappers = self._get_all_wrappers('link.wrappers')
-        directories = self.__config.get('external_wrapper_directories')
+        directories = self._config.get('external_wrapper_directories')
         self.load_wrapper_directories(directories)
-        packages = self.__config.get('external_wrapper_packages')
+        packages = self._config.get('external_wrapper_packages')
         self.load_wrapper_packages(packages)
     
     def load_wrapper_directories(self, directories):
@@ -287,7 +287,17 @@ class Link(object):
             for ext_mod in packages:
                 wrapper_classes = self._get_all_wrappers(ext_mod)
                 self.wrappers.update(wrapper_classes) 
- 
+    
+    @property
+    def _config(self):
+        """
+        Lazy load the config so that any errors happen then
+        """
+        if not self.__config:
+            self.__config = load_json_file(self.__config_file)
+        
+        return self.__config
+
     def fresh(self, config_file=None, namespace=None):
         """
         sets the environment with a fresh config or namespace that is not
@@ -297,9 +307,10 @@ class Link(object):
             config_file = self.config_file()
  
         self.__config_file = config_file
-        self.__config = load_json_file(config_file)
-        self._commander = self.__config.get('__cmds__')
-        self._commander = self.__config.get('__scripts__')
+        self.__config = None
+        # I don't think i want to support this feature anymore
+        #self._commander = self.__config.get('__cmds__')
+        #self._commander = self.__config.get('__scripts__')
         self.namespace = namespace
         self.wrappers = {}
 
@@ -308,6 +319,8 @@ class Link(object):
         Create a new instance of the Link.  Should be done
         through the instance() method.
         """
+        #this will be lazy loaded
+        self.__config = None
         self.wrappers = {}
         self.fresh(config_file, namespace)
     
@@ -315,14 +328,14 @@ class Link(object):
         try:
             return self.__getattribute__(name)
         except Exception as e:
-            return self(wrap_name = name, **self.__config[name].copy())
+            return self(wrap_name = name, **self._config[name].copy())
     
     def config(self, config_lookup = None):
         """
         If you have a conf_key then return the
         dictionary of the configuration
         """
-        ret = self.__config
+        ret = self._config
 
         if config_lookup:
             try:
@@ -332,7 +345,7 @@ class Link(object):
                 raise KeyError('No such configured object %s' % config_lookup)
             return ret
 
-        return self.__config
+        return ret
 
 
     def __call__(self, wrap_name=None, *kargs, **kwargs):

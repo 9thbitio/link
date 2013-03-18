@@ -35,17 +35,12 @@ Sample Code::
 
 """
 #import all of this version information
-__version__ = '0.1.4'
+__version__ = '0.1.7'
 __author__ = 'David Himrod'
 __license__ = 'Apache 2.0'
 __copyright__ = 'Copyright 2013 David Himrod'
 __title__ = 'link'
 
-lnk = None
-#i don't like this but i can't figure out a better way to do it yet
-try:
-    from .link import Link, Wrapper, lnk
-except:
-    pass
+from .link import Link, Wrapper, lnk
 
 from common import *

@@ -7,6 +7,7 @@ from link.tests import *
 DIR = os.path.dirname(__file__)
 TEST_CONFIG = 'test_link.test_config' 
 TEST_CONFIG2 = 'test_link2.test_config'
+BAD_CONFIG = 'bad_config.test_config'
 
 #load in all the configs that we want
 lnk = Link.instance()
@@ -14,6 +15,7 @@ config1 = load_tst_config(TEST_CONFIG)
 config1_path = tst_config_path(TEST_CONFIG)
 config2 = load_tst_config(TEST_CONFIG2)
 config2_path = tst_config_path(TEST_CONFIG2)
+bad_config_path = tst_config_path(BAD_CONFIG)
 
 FAKE_WRAPPER_PATH1 = tst_file_path('fake_wrappers')
 FAKE_WRAPPER_PATH2 = tst_file_path('fake_wrappers.fake_wrap2')
@@ -48,6 +50,13 @@ class TestLink(unittest.TestCase):
         self.assertNotEquals(lookup_conf1, lookup_conf2)
         self.assertEquals(lookup_conf1, config1['apis']['test_api'])
         self.assertEquals(lookup_conf2, config2['apis']['test_api'])
+    
+    def test_bad_config(self):
+        #we want to make sure it won't bomb out on the fresh but 
+        #throws exception when you actually do something where it calls the
+        #config
+        lnk.fresh(config_file = bad_config_path)
+        self.assertRaises(Exception, lnk.config)
 
     def test_default_wrapper(self):
         wrap_name = 'apis.test_api'
