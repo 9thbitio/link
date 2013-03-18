@@ -325,6 +325,11 @@ class Link(object):
         self.fresh(config_file, namespace)
     
     def __getattr__(self, name):
+        """
+        The lnk object will first look for it's native functions to call
+        If they aren't there then it will create a wrapper for the configuration 
+        that is led to by "name"
+        """
         try:
             return self.__getattribute__(name)
         except Exception as e:
