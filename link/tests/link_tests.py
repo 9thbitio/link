@@ -8,6 +8,7 @@ DIR = os.path.dirname(__file__)
 TEST_CONFIG = 'test_link.test_config' 
 TEST_CONFIG2 = 'test_link2.test_config'
 BAD_CONFIG = 'bad_config.test_config'
+NO_CONFIG = 'no_config.test_config'
 
 #load in all the configs that we want
 lnk = Link.instance()
@@ -16,6 +17,8 @@ config1_path = tst_config_path(TEST_CONFIG)
 config2 = load_tst_config(TEST_CONFIG2)
 config2_path = tst_config_path(TEST_CONFIG2)
 bad_config_path = tst_config_path(BAD_CONFIG)
+#this does not exist
+no_config_path = tst_config_path(NO_CONFIG)
 
 FAKE_WRAPPER_PATH1 = tst_file_path('fake_wrappers')
 FAKE_WRAPPER_PATH2 = tst_file_path('fake_wrappers.fake_wrap2')
@@ -56,6 +59,12 @@ class TestLink(unittest.TestCase):
         #throws exception when you actually do something where it calls the
         #config
         lnk.fresh(config_file = bad_config_path)
+        self.assertRaises(ValueError, lnk.config)
+
+    def test_no_config(self):
+        #we want to make sure that it will load without a config but will throw
+        #an appropriate error when you try to use the config
+        lnk.fresh(config_file = no_config_path)
         self.assertRaises(Exception, lnk.config)
 
     def test_default_wrapper(self):

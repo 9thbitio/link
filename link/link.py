@@ -74,7 +74,7 @@ class Callable(object):
                 p.wait()
             return p
 
-        
+      
 class Commander(object):
     """
     Given a dictionary of commands the commander can run them very easily
@@ -200,7 +200,7 @@ class Link(object):
 
         #if there is a user global then use that 
         if os.path.exists(cls.LNK_CONFIG):
-            return cls.LNK_CONFIG
+           return cls.LNK_CONFIG
     
         # if they ore in iPython and there is no user config
         # lets create the user config for them 
@@ -215,9 +215,7 @@ class Link(object):
             new_config.close()
             return cls.LNK_CONFIG
         
-        raise Exception("""No config found.  Set environment variable LNK_DIR to
-                        #point to your link configuration directory or create a
-                        #.link/link.config file in your HOME directory""")
+        return None
 
     @classmethod
     def instance(cls):
@@ -293,6 +291,13 @@ class Link(object):
         """
         Lazy load the config so that any errors happen then
         """
+        if not self.__config_file:
+            #If there is not config file then return an error. 
+            #TODO: Refactor the config code, it's overly confusing
+            raise Exception("""No config found.  Set environment variable LNK_DIR to
+                        point to your link configuration directory or create a
+                        #.link/link.config file in your HOME directory""")
+
         if not self.__config:
             self.__config = load_json_file(self.__config_file)
         

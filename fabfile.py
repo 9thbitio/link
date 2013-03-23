@@ -42,6 +42,18 @@ def dir_scripts():
 
 config_dir = '~/.link' 
 
+def test_install():
+    import os
+    #set the link dir to something silly
+    os.environ['LNK_DIR']='saodusah'
+    #create a virtual environment
+    local('echo $LNK_DIR')
+    local('virtualenv env')
+    #remove everything from the build directory
+    local('rm -rf build')
+    #run this and see that it works
+    local('source env/bin/activate && python setup.py install')
+
 def configure():
     """
     Create the base configuration so that you can change it.  Might want to

@@ -25,8 +25,9 @@ def load_json_file(file_name):
     import json
     try:
         return json.loads(data)
-    except:
-        raise Exception("Error json decoding file %s" % file_name)
+    except Exception as e:
+        raise ValueError("Error json decoding file: %s error: %s" % (file_name,
+                                                                     e.message))
 
 def list_to_dataframe(rows, names):
     """
