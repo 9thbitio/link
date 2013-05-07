@@ -360,6 +360,7 @@ class MysqlDB(DBConnectionWrapper):
         self.password = password
         self.host = host
         self.database = database
+        self.port=port
         super(MysqlDB, self).__init__(wrap_name=wrap_name)
 
     def create_connection(self):
@@ -379,7 +380,7 @@ class MysqlDB(DBConnectionWrapper):
         conv[MySQLdb.constants.FIELD_TYPE.NEWDECIMAL] = float
         conn = MySQLdb.connect(host=self.host, user=self.user, 
                                db=self.database, passwd=self.password,
-                               conv=conv)
+                               conv=conv, port=self.port)
         return conn
 
     def use(self, database):
