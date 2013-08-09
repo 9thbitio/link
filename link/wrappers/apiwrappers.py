@@ -141,6 +141,13 @@ class APIRequestWrapper(Wrapper):
         """
         return self.request('post', url_params = url_params, data = data,
                             **kwargs)
+    
+    def delete(self, url_params='', data='', **kwargs):
+        """
+        Make a delete call
+        """
+        return self.request('delete', url_params = url_params, data = data,
+                            **kwargs)
 
     def clear_session(self):
         """
