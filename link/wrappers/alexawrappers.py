@@ -7,48 +7,48 @@ import hashlib
 import hmac
 import urllib
 
-class AlexaAuth(AuthBase):
-    """
-    Does the authentication for Console requests.  
-    """
-    def __init__(self, host, path, access_key, secret_key):
-        # setup any auth-related data here
-        self.host = host
-        self.path = path
-        self.access_key = access_key
-        self.secret_key = secret_key
+#class AlexaAuth(AuthBase):
+    #"""
+    #Does the authentication for Console requests.  
+    #"""
+    #def __init__(self, host, path, access_key, secret_key):
+        ## setup any auth-related data here
+        #self.host = host
+        #self.path = path
+        #self.access_key = access_key
+        #self.secret_key = secret_key
 
-    def __call__(self, req):
-        # modify and return the request
-        parameters = self.get_parameters(req.params) 
-        req.url='%s/?%s' % (req.url.rstrip('/'), parameters)
-        return req
+    #def __call__(self, req):
+        ## modify and return the request
+        #parameters = self.get_parameters(req.params) 
+        #req.url='%s/?%s' % (req.url.rstrip('/'), parameters)
+        #return req
 
-    def sign(self, params):
-        msg = "\n".join(["GET",
-                         self.host,
-                         self.path,
-                         self._urlencode(params)])
-        hmac_signature = hmac.new(str(self.secret_key), msg, hashlib.sha1)
-        signature = base64.b64encode(hmac_signature.digest())
-        return signature
+    #def sign(self, params):
+        #msg = "\n".join(["GET",
+                         #self.host,
+                         #self.path,
+                         #self._urlencode(params)])
+        #hmac_signature = hmac.new(str(self.secret_key), msg, hashlib.sha1)
+        #signature = base64.b64encode(hmac_signature.digest())
+        #return signature
 
-    def get_parameters(self, params):
-        params.update({
-            "AWSAccessKeyId": self.access_key,
-            "SignatureMethod": "HmacSHA1",
-            "SignatureVersion": 2,
-            "Timestamp": self._get_timestamp(),
-        })
-        params["Signature"] = self.sign(params)
-        return self._urlencode(params)
+    #def get_parameters(self, params):
+        #params.update({
+            #"AWSAccessKeyId": self.access_key,
+            #"SignatureMethod": "HmacSHA1",
+            #"SignatureVersion": 2,
+            #"Timestamp": self._get_timestamp(),
+        #})
+        #params["Signature"] = self.sign(params)
+        #return self._urlencode(params)
 
-    def _get_timestamp(self):
-        return datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    #def _get_timestamp(self):
+        #return datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
-    def _urlencode(self, params):
-        params = [(key, params[key]) for key in sorted(params.keys())]
-        return urllib.urlencode(params)
+    #def _urlencode(self, params):
+        #params = [(key, params[key]) for key in sorted(params.keys())]
+        #return urllib.urlencode(params)
 
 
 
@@ -89,15 +89,48 @@ class AlexaAPI(APIRequestWrapper):
         super(AlexaAPI, self).__init__(wrap_name=wrap_name, base_url = base_url,
                                        response_wrapper = response_wrapper)
         
-    def authenticate(self):
-        """
-        Write a custom auth property where we grab the auth token and put it in 
-        the headers
-        """
+    #def authenticate(self):
+        #"""
+        #Write a custom auth property where we grab the auth token and put it in 
+        #the headers
+        #"""
         #I don't like this
-        return AlexaAuth(self.base_url.lstrip('http://').rstrip('/'), 
-                         "/", self.access_key, self.secret_key) 
+        #return AlexaAuth(self.base_url.lstrip('http://').rstrip('/'), 
+                         #"/", self.access_key, self.secret_key) 
     
+    def get_url(self, url_path='/', params=None):
+        parameters = self.get_parameters(url_path, params) 
+        url='%s?%s' % (url_path, parameters)
+        return url
+
+    def sign(self, url_path, params):
+        msg = "\n".join(["GET",
+                         self.base_url.lstrip('http://').rstrip('/'),
+                         url_path,
+                         self._urlencode(params)])
+        hmac_signature = hmac.new(str(self.secret_key), msg, hashlib.sha1)
+        signature = base64.b64encode(hmac_signature.digest())
+        return signature
+
+    def get_parameters(self, url_path, params):
+        params = params or {}
+        params.update({
+            "AWSAccessKeyId": self.access_key,
+            "SignatureMethod": "HmacSHA1",
+            "SignatureVersion": 2,
+            "Timestamp": self._get_timestamp(),
+        })
+        params["Signature"] = self.sign(url_path, params)
+        return self._urlencode(params)
+
+    def _get_timestamp(self):
+        return datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+    def _urlencode(self, params):
+        params = [(key, params[key]) for key in sorted(params.keys())]
+        return urllib.urlencode(params)
+
+
     def url_info(self, urls, response_groups):
 
         params = { "Action": "UrlInfo" }
@@ -120,6 +153,6 @@ class AlexaAPI(APIRequestWrapper):
             for i, url in enumerate(urls):
                 params.update({"UrlInfo.%d.Url" % (i + 1): url})
         
-        return self.get(params=params)
+        return self.get(self.get_url(params=params))
 
 
