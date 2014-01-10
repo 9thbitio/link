@@ -7,8 +7,9 @@ class ElasticSearch(Wrapper):
     to do tasks like put queries into dataframes
     """
     def __init__(self, wrap_name = None, **kwargs):
+        self.options = {}
         if kwargs:
-            self.__dict__.update(kwargs)
+            self.options.update(kwargs)
 
         #get the connection and pass it to wrapper os the wrapped object
         connection = self.create_connection()
@@ -19,8 +20,8 @@ class ElasticSearch(Wrapper):
         Search through ElasticSearch records and return the result as dict
         """
         response = self._wrapped.search(
-            index = self.index,
-            doc_type = self.doc_type,
+            index = self.options['index'],
+            doc_type = self.options['doc_type'],
             body = query,
         )
         return response
@@ -29,11 +30,12 @@ class ElasticSearch(Wrapper):
         """
         Add a new entry to ElasticSearch index
         """
-        ret = self._wrapped.index(
-            index=self.index,
-            doc_type=self.doc_type,
+        response = self._wrapped.index(
+            index=self.options['index'],
+            doc_type=self.options['doc_type'],
             body=doc,
         )
+        return response
 
     def create_connection(self):
         """
@@ -41,4 +43,4 @@ class ElasticSearch(Wrapper):
         class which get's called in it's initializer
         """
         from elasticsearch import Elasticsearch
-        return Elasticsearch(hosts=self.hosts)
+        return Elasticsearch(hosts=self.options['hosts'])
