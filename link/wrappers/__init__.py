@@ -4,3 +4,4 @@ from nosqlwrappers import *
 from consolewrappers import *
 from atlassianwrappers import *
 from alexawrappers import *
+from elasticsearchwrappers import *
