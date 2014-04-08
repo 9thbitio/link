@@ -26,6 +26,40 @@ class ElasticSearch(Wrapper):
         )
         return response
 
+    def scan(self, query, chunk_size=10000, scroll='10m'):
+        """
+        Query ElasticSearch records, suitable for large response.
+
+        Similar to 'search' method but works better with large result sets
+        (hundreds of thousands of records) as it receives data from
+        ElasticSearch in chunks.
+
+        Returns generator object which can be used to grow Pandas
+        DataFrame iteratively, e.g.:
+
+        df = DataFrame()
+        for response in esdb.scan(query):
+            df = pandas.concat([df, DataFrame(response['hits']['hits'])])
+        # do something with df here
+
+        """
+        from elasticsearch.exceptions import TransportError
+        response = self._wrapped.search(
+            index=self.options['index'],
+            doc_type = self.options['doc_type'],
+            body = query,
+            search_type = 'scan',
+            scroll = scroll,
+            size=chunk_size,
+        )
+        scroll_id = response['_scroll_id']
+        while True:
+            try:
+                response = self._wrapped.scroll(scroll_id=scroll_id, scroll=scroll)
+                yield response
+            except TransportError as e:
+                break
+
     def index(self, doc):
         """
         Add a new entry to ElasticSearch index
