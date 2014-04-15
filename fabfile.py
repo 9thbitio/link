@@ -114,6 +114,8 @@ def commit(msg=None):
 
 def tag_names(number = 10, stable=False):
     number = int(number)
+    print "fetching tags first"
+    local('git fetch --tags ')
     print "Showing latest tags for reference"
     tags =  local('git tag -n1 ', capture = True)
     tags = [x for x in tags.split('\n') if TAG_REGEX.findall(x) and 
