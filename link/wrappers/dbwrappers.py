@@ -70,6 +70,8 @@ class DBConnectionWrapper(Wrapper):
     wraps a database connection and extends the functionality
     to do tasks like put queries into dataframes
     """
+    CURSOR_WRAPPER = DBCursorWrapper
+
     def __init__(self, wrap_name = None, chunked=False, **kwargs):
         
         if kwargs:
@@ -99,7 +101,7 @@ class DBConnectionWrapper(Wrapper):
         Creates a cursor and executes the query for you
         """
         cursor = self._wrapped.cursor()
-        return DBCursorWrapper(cursor, query, args=args)()
+        return self.CURSOR_WRAPPER(cursor, query, args=args)()
 
     #TODO: Add in the ability to pass in params and also index 
     def select_dataframe(self, query, args=()):
@@ -139,7 +141,7 @@ class DBConnectionWrapper(Wrapper):
         if not cursor:
             raise Exception("no cursor found")
 
-        return DBCursorWrapper(cursor, query, args=args)()
+        return self.CURSOR_WRAPPER(cursor, query, args=args)()
  
     def create_connection(self):
         """

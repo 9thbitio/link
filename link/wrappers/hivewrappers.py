@@ -3,7 +3,7 @@ import contextlib
 from link import Wrapper
 from link.utils import list_to_dataframe
 from datetime import datetime
-from dbwrappers import DBConnectionWrapper
+from dbwrappers import DBConnectionWrapper, DBCursorWrapper
 
 class HiveCursorWrapper(Wrapper):
     """
@@ -207,16 +207,33 @@ class HiveDB(Wrapper):
 #keep it backwards compatible for now
 HiveConnectionWrapper = HiveDB
 
+class Hive2Cursor(DBCursorWrapper):
+
+    @property
+    def data(self):
+        self._data = []
+
+        if not self._data:
+            next_data = self.cursor.fetch() 
+
+            while(next_data):
+                self._data.append(next_data)
+                next_data = self.cursor.fetch() 
+
+        return self._data
+
 
 class Hive2DB(DBConnectionWrapper):
     
-    def __init__(self, wrap_name=None, user=None, password=None, 
-                 host=None, database='default', port = 10000, 
+    CURSOR_WRAPPER = Hive2Cursor
+
+    def __init__(self, wrap_name=None, user='', password='', 
+                 host='', database='default', port = 10000, 
                  auth_mechanism = "PLAIN"):
-        self.user = user
-        self.password = password
-        self.host = host
-        self.database = database
+        self.user = str(user)
+        self.password = str(password)
+        self.host = str(host)
+        self.database = str(database)
         self.port = port
         self.auth_mechanism = auth_mechanism
         super(Hive2DB, self).__init__(wrap_name=wrap_name)
