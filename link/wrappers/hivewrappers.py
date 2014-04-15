@@ -3,6 +3,7 @@ import contextlib
 from link import Wrapper
 from link.utils import list_to_dataframe
 from datetime import datetime
+from dbwrappers import DBConnectionWrapper
 
 class HiveCursorWrapper(Wrapper):
     """
@@ -205,3 +206,33 @@ class HiveDB(Wrapper):
 
 #keep it backwards compatible for now
 HiveConnectionWrapper = HiveDB
+
+
+class Hive2DB(DBConnectionWrapper):
+    
+    def __init__(self, wrap_name=None, user=None, password=None, 
+                 host=None, database='default', port = 10000, 
+                 auth_mechanism = "PLAIN"):
+        self.user = user
+        self.password = password
+        self.host = host
+        self.database = database
+        self.port = port
+        self.auth_mechanism = auth_mechanism
+        super(Hive2DB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the Netezza 
+        class which get's called in it's initializer
+        """
+        import pyhs2
+        conn = pyhs2.connect(host=self.host, 
+                             port=self.port,
+                             authMechanism=self.auth_mechanism, 
+                             user=self.user, 
+                             password=self.password, 
+                             database=self.database)
+        return conn
+
+
