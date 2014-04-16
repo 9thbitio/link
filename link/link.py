@@ -449,7 +449,7 @@ class Wrapper(Callable):
         # first look if the Wrapper object itself has it
         try:
             return self.__getattribute__(name)
-        except:
+        except AttributeError as e:
             pass
 
         if self._wrapped is not None:
@@ -458,10 +458,10 @@ class Wrapper(Callable):
             #this might not be correct
             try:
                 return self._wrapped.__getattr__(name)
-            except Exception as e:
+            except AttributeError as e:
                 try:
                     return self._wrapped.__getattribute__(name)
-                except Exception as e:
+                except AttributeError as e:
                     raise AttributeError("No Such Attribute in wrapper %s" % name)
         
         #then it is trying to unpickle itself and there is no setstate

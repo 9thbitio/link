@@ -212,16 +212,23 @@ class Hive2Cursor(DBCursorWrapper):
     @property
     def data(self):
         self._data = []
-
+        
+        #probably a faster way to do this
         if not self._data:
             next_data = self.cursor.fetch() 
 
             while(next_data):
-                self._data.append(next_data)
+                self._data.extend(next_data)
                 next_data = self.cursor.fetch() 
 
         return self._data
 
+    @property
+    def columns(self):
+        if not self._columns:
+            self._columns = [x['columnName'].lower() for x in self.cursor.getSchema()]
+        return self._columns
+ 
 
 class Hive2DB(DBConnectionWrapper):
     
