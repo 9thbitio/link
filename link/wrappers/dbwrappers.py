@@ -116,14 +116,7 @@ class DBConnectionWrapper(Wrapper):
                             "sudo easy_install pandas")
 
         cursor = self.execute(query, args = args)
-        data = cursor.fetchall()
-        columns = [x[0].lower() for x in cursor.description]
-        
-        #check to see if they have duplicate column names
-        if len(columns)>len(set(columns)):
-            raise Exception("Cannot have duplicate column names " +
-                            "in your query %s, please rename" % columns)
-        return list_to_dataframe(data, columns) 
+        return cursor.as_dataframe()
     
     def select(self, query=None, chunk_name = None, args=()):
         """
