@@ -89,7 +89,8 @@ class APIRequestWrapper(Wrapper):
         sess = requests.session()
         sess.headers = self.headers
         super(APIRequestWrapper, self).__init__(wrap_name, sess)
-        sess.auth = self.authenticate() 
+        # Sets the Auth for the requests.session() object
+        self.authenticate()
     
     def authenticate(self):
         """
@@ -98,7 +99,9 @@ class APIRequestWrapper(Wrapper):
         it will auth using HTTPBasicAuth
         """
         if self.user and self.password:
-            return HTTPBasicAuth(self.user, self.password)
+            # self._wrapped object is the requests.session() object. So we just set the
+            # auth here
+            self._wrapped.auth = HTTPBasicAuth(self.user, self.password)
 
     def request(self, method='get', url_params = '' , data = '', allow_reauth =
                 True, **kwargs):
@@ -112,13 +115,13 @@ class APIRequestWrapper(Wrapper):
 
         full_url = self.base_url + url_params
         #turn the string method into a function name
-        method = self._wrapped.__getattribute__(method)
-        resp = self.response_wrapper(response = method(full_url, data = data, 
+        _method = self._wrapped.__getattribute__(method)
+        resp = self.response_wrapper(response = _method(full_url, data = data,
                                                        **kwargs))
         #if you get a no auth then retry the auth
         if allow_reauth and resp.noauth():
-            self.authenicate()
-            self.request(method, url_params, data, allow_reauth=False, **kwargs)
+            self.authenticate()
+            return self.request(method, url_params, data, allow_reauth=False, **kwargs)
 
         return resp
     
