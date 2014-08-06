@@ -22,11 +22,14 @@ REQUIRES = ['requests>=0.10']
 try:
     import numpy
     import pandas
+    import xmltodict
 except:
     print "We highly suggest you install numpy and Pandas for some functionality" 
     print "easy_install numpy"
     print "easy_install pandas"
-
+    print "xmltodict is used in Alexa's json wrapper"
+    print "pip install xmltodict"  
+  
 # write out the version file so we can keep track on what version the built
 # package is
 

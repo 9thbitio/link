@@ -6,6 +6,7 @@ import datetime
 import hashlib
 import hmac
 import urllib
+import xmltodict
 
 #class AlexaAuth(AuthBase):
     #"""
@@ -64,6 +65,18 @@ class AlexaResponse(APIResponseWrapper):
         super(AlexaResponse,self).__init__(wrap_name =wrap_name,
                                            response=response)
 
+    @property
+    def xml(self):
+        # returns an ordered dict
+        alexa_dict = xmltodict.parse(self.content.replace("aws:",""))
+        status_code = alexa_dict['UrlInfoResponse']['Response']['ResponseStatus']['StatusCode']
+
+        # check if there is valid alexa info; if so, return from there onwards
+        if status_code == "Success":
+          alexa_data = alexa_dict['UrlInfoResponse']['Response']['UrlInfoResult']['Alexa']
+          return alexa_data
+
+        return None
 
 class AlexaAPI(APIRequestWrapper):
     """
