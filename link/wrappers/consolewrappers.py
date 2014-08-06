@@ -4,6 +4,7 @@ from link.common import APIResponse
 from link.wrappers import APIRequestWrapper, APIResponseWrapper
 from requests.auth import AuthBase
 import json
+import requests
 
 
 class ConsoleAuth(AuthBase):
@@ -60,6 +61,12 @@ class ConsoleAPIResponseWrapper(APIResponseWrapper):
         return the error_id
         """
         return self.json['response'].get('error_code')
+
+    def noauth(self):
+        """
+        Returns whether erorr is NOAUTH
+        """
+        return self.json['response'].get('error_id') == 'NOAUTH'
         
 
 class APIClientMessage(object):
@@ -275,6 +282,7 @@ class ConsoleAPIRequestWrapper(APIRequestWrapper):
         the headers
         """
         auth_json={'auth':{'username':self.user, 'password':self.password}}
+        self._wrapped = requests.session()
         #send a post with no auth. prevents an infinite loop
         auth_response = self.post('/auth', data = json.dumps(auth_json), auth =
                                  None)
@@ -282,7 +290,7 @@ class ConsoleAPIRequestWrapper(APIRequestWrapper):
         _token =  auth_response.json['response']['token']
 
         self._token = _token
-        return ConsoleAuth(_token) 
+        self._wrapped.auth = ConsoleAuth(_token) 
 
     @property
     def token(self):
