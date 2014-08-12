@@ -1,5 +1,6 @@
 from link import Wrapper
 from link.utils import list_to_dataframe
+from contextlib import closing
 import defaults
 
 class DBCursorWrapper(Wrapper):
@@ -23,7 +24,8 @@ class DBCursorWrapper(Wrapper):
     @property
     def data(self):
         if not self._data:
-           self._data = self.cursor.fetchall() 
+            with closing(self.cursor) as cursor:
+                self._data = cursor.fetchall() 
         return self._data
 
     def as_dataframe(self):
@@ -341,7 +343,8 @@ class VerticaDB(DBConnectionWrapper):
 class MysqlDB(DBConnectionWrapper):
 
     def __init__(self, wrap_name=None, user=None, password=None, 
-            host=None, database=None, port=defaults.MYSQL_DEFAULT_PORT):
+            host=None, database=None, port=defaults.MYSQL_DEFAULT_PORT,
+            autocommit=True):
         """
         A connection for a Mysql Database.  Requires that
         MySQLdb is installed
@@ -356,7 +359,23 @@ class MysqlDB(DBConnectionWrapper):
         self.host = host
         self.database = database
         self.port=port
+        self.autocommit = autocommit
         super(MysqlDB, self).__init__(wrap_name=wrap_name)
+
+    def execute(self, query, args = ()):
+        """
+        Creates a cursor and executes the query for you
+        """
+        import MySQLdb
+        try:
+            cursor = self._wrapped.cursor()
+        except MySQLdb.OperationalError, e:
+            if e[0] == 2006:
+                self._wrapped.close()
+                self._wrapped = self.create_connection()
+                cursor = self._wrapped.cursor()
+
+        return self.CURSOR_WRAPPER(cursor, query, args=args)()
 
     def create_connection(self):
         """
@@ -376,6 +395,8 @@ class MysqlDB(DBConnectionWrapper):
         conn = MySQLdb.connect(host=self.host, user=self.user, 
                                db=self.database, passwd=self.password,
                                conv=conv, port=self.port)
+        if self.autocommit:
+            conn.autocommit(True)
         return conn
 
     def use(self, database):
