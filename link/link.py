@@ -1,3 +1,41 @@
+# -*- coding: utf-8 -*-
+
+"""
+link
+~~~~~~~~~~~~
+
+The link module helps you connect to all of the data sources you need through a
+simple configuration 
+    
+Sample Config to connect to mysql::
+
+   { 
+        "dbs":{
+           "my_db": {
+               "wrapper": "MysqlDB",
+               "host": "mysql-master.123fakestreet.net",
+               "password": "<password>",
+               "user": "<user>",
+               "database": "<database_name>"
+           }
+        }
+    }
+
+Sample Code::
+
+    In [3]: from link import lnk
+    
+    # uses the keys from your configuration to look up and create the
+    # appropriate objects
+    In [35]: my_db = lnk.dbs.my_db
+
+    In [36]: data = my_db.select('select id from my_table')
+
+:copyright: (c) 2013 by David Himrod
+:license: Apache2, see LICENSE for more details.
+
+"""
+
 import os
 import sys
 import inspect
@@ -8,7 +46,35 @@ from common import Cacheable
 
 #this get's the current directory of link
 lnk_dir = os.path.split(os.path.abspath(__file__))[0]
+class Callable(object):
+    """
+    A callable object that has a run_shell method
+    """
+    @property
+    def command(self):
+        """
+        Here is the command for doing the mysql command
+        """
+        raise NotImplementedError('You have not defined a command for this Callable Object')
 
+    def __call__(self, command = None, wait = True):
+        """
+        When you call this Callable it will run the command.  The command can
+        either be a string to run on the shell or a function to run in python 
+
+        Right now it only supports string commands for the shell
+        """
+        cmd = command or self.command
+        #import pdb; pdb.set_trace()
+
+        if cmd:
+            p= Popen(cmd,shell=True)
+
+            if wait:
+                p.wait()
+            return p
+
+      
 class Commander(object):
     """
     Given a dictionary of commands the commander can run them very easily
@@ -134,7 +200,7 @@ class Link(object):
 
         #if there is a user global then use that 
         if os.path.exists(cls.LNK_CONFIG):
-            return cls.LNK_CONFIG
+           return cls.LNK_CONFIG
     
         # if they ore in iPython and there is no user config
         # lets create the user config for them 
@@ -149,9 +215,7 @@ class Link(object):
             new_config.close()
             return cls.LNK_CONFIG
         
-        raise Exception("""No config found.  Set environment variable LNK_DIR to
-                        point to your link configuration directory or create a
-                        .link/link.config file in your HOME directory""")
+        return None
 
     @classmethod
     def instance(cls):
@@ -176,9 +240,8 @@ class Link(object):
         try:
             wrapper_mod = __import__(mod_or_package, fromlist = ['*'])
         except ImportError as e:
-            raise e
-            raise ImportError("No such wrapper in the PYTHONPATH: %s" %
-                              e.message)
+            raise
+
         #get all classes by name and put them into a dictionary
         wrapper_classes = dict([(name,cls) for name, cls in
                                 inspect.getmembers(wrapper_mod) if
@@ -191,9 +254,9 @@ class Link(object):
         """
         #load all the standard ones first
         self.wrappers = self._get_all_wrappers('link.wrappers')
-        directories = self.__config.get('external_wrapper_directories')
+        directories = self._config.get('external_wrapper_directories')
         self.load_wrapper_directories(directories)
-        packages = self.__config.get('external_wrapper_packages')
+        packages = self._config.get('external_wrapper_packages')
         self.load_wrapper_packages(packages)
     
     def load_wrapper_directories(self, directories):
@@ -222,7 +285,24 @@ class Link(object):
             for ext_mod in packages:
                 wrapper_classes = self._get_all_wrappers(ext_mod)
                 self.wrappers.update(wrapper_classes) 
- 
+    
+    @property
+    def _config(self):
+        """
+        Lazy load the config so that any errors happen then
+        """
+        if not self.__config_file:
+            #If there is not config file then return an error. 
+            #TODO: Refactor the config code, it's overly confusing
+            raise Exception("""No config found.  Set environment variable LNK_DIR to
+                        point to your link configuration directory or create a
+                        #.link/link.config file in your HOME directory""")
+
+        if not self.__config:
+            self.__config = load_json_file(self.__config_file)
+        
+        return self.__config
+
     def fresh(self, config_file=None, namespace=None):
         """
         sets the environment with a fresh config or namespace that is not
@@ -232,9 +312,10 @@ class Link(object):
             config_file = self.config_file()
  
         self.__config_file = config_file
-        self.__config = load_json_file(config_file)
-        self._commander = self.__config.get('__cmds__')
-        self._commander = self.__config.get('__scripts__')
+        self.__config = None
+        # I don't think i want to support this feature anymore
+        #self._commander = self.__config.get('__cmds__')
+        #self._commander = self.__config.get('__scripts__')
         self.namespace = namespace
         self.wrappers = {}
 
@@ -243,26 +324,28 @@ class Link(object):
         Create a new instance of the Link.  Should be done
         through the instance() method.
         """
+        #this will be lazy loaded
+        self.__config = None
         self.wrappers = {}
         self.fresh(config_file, namespace)
     
     def __getattr__(self, name):
+        """
+        The lnk object will first look for it's native functions to call
+        If they aren't there then it will create a wrapper for the configuration 
+        that is led to by "name"
+        """
         try:
             return self.__getattribute__(name)
         except Exception as e:
-            try:
-                return self(wrap_name = name, **self.__config[name].copy())
-            except:
-                raise e
-                raise Exception('Link has no attribute %s and none is configured'
-                                % name)
+            return self(wrap_name = name, **self._config[name].copy())
     
     def config(self, config_lookup = None):
         """
         If you have a conf_key then return the
         dictionary of the configuration
         """
-        ret = self.__config
+        ret = self._config
 
         if config_lookup:
             try:
@@ -272,7 +355,7 @@ class Link(object):
                 raise KeyError('No such configured object %s' % config_lookup)
             return ret
 
-        return self.__config
+        return ret
 
 
     def __call__(self, wrap_name=None, *kargs, **kwargs):
@@ -297,12 +380,8 @@ class Link(object):
 
         # if it is here we want to remove before we pass through
         wrapper = self._get_wrapper(wrap_config.pop('wrapper', None))
+        return wrapper(wrap_name = wrap_name, **wrap_config)
 
-        try:
-            return wrapper(wrap_name = wrap_name, **wrap_config)
-        except TypeError as e:
-            raise Exception('Error wrapping configuration with object %s, message %s ' %
-                            (wrapper, e.message))
 
     def _get_wrapper(self, wrapper):
         """
@@ -338,9 +417,10 @@ class Link(object):
         except:
             print "error moving files"
 
+
 lnk = Link.instance()
 
-class Wrapper(Cacheable):
+class Wrapper(Callable):
     """
     The wrapper wraps a piece of the configuration.  
     """
@@ -348,6 +428,7 @@ class Wrapper(Cacheable):
     cmdr = None
 
     def __init__(self, wrap_name = None, wrapped_object=None, **kwargs):
+        super(Wrapper, self).__init__()
         self.wrap_name = wrap_name
         self._wrapped = wrapped_object
 
@@ -365,10 +446,11 @@ class Wrapper(Cacheable):
         """
         wrap a special object if it exists
         """
-        #first look for a wrapper item named that
-        if name in self.__dict__:
-            print name
-            return self.__getatribute__(name)
+        # first look if the Wrapper object itself has it
+        try:
+            return self.__getattribute__(name)
+        except AttributeError as e:
+            pass
 
         if self._wrapped is not None:
             #if it has a getattr then try that out otherwise go to getattribute
@@ -376,80 +458,26 @@ class Wrapper(Cacheable):
             #this might not be correct
             try:
                 return self._wrapped.__getattr__(name)
-            except Exception as e:
+            except AttributeError as e:
                 try:
                     return self._wrapped.__getattribute__(name)
-                except Exception as e:
+                except AttributeError as e:
                     raise AttributeError("No Such Attribute in wrapper %s" % name)
-       
-        # i'm not sure I have to do the loaded thing
-        if self.loaded:
-            #try the command, if its nothing than try the wrapper
-            cmd = self(name)
-            if cmd:
-                return cmd
-            else:
-                wrapper = '%s.%s' % (self.wrap_name, name)
-                try:
-                    if self.wrap_name:
-                        return lnk(wrapper)
-                except Exception as e:
-                    raise e
-                    raise AttributeError("Error creating wrapper %s: %s" % (wrapper,
-                                         e.message))
+        
+        #then it is trying to unpickle itself and there is no setstate
+        #TODO: Clean this up, it's crazy and any changes cause bugs
+        if name == '__setstate__':
+            raise AttributeError("No such attribute found %s" % name)
+
+        #call the wrapper to create a new one
+        wrapper = '%s.%s' % (self.wrap_name, name)
+        if self.wrap_name:
+            return lnk(wrapper)
 
         raise AttributeError("No such attribute found %s" % name)
 
     def config(self):
         return self.__link_config__
-
-    def command(self, name, args=None, commander=None, base_dir=None):
-        """
-        Run a command for a commander
-        """
-        # default to the script commander as default behavior
-        # need to k
-        if not commander:
-            commander = self.cmdr
-        
-        base_dir = base_dir or ''
-        run_parameters = []
-        if args and isinstance(args, list): 
-            run_parameters = args[1:]
-        try:
-            return commander.run_command(name, *run_parameters,
-                                         base_dire=base_dir)
-        except Exception as e:
-            return None
-
-    def __call__(self, *kargs, **kwargs):
-        """
-        by default a wrapper with a __cmd__ will be run on the command line
-
-        prefer configured commands in $LNK_HOME/link.config,
-        then lnk scripts (in <lnk_dir>/scripts, then user scripts (cwd scripts)
-        """
-        #run the command specified by the first param, else run the default
-        #cammond
-        if kargs and len(kargs)>0:
-
-            if self.commander.has_command(kargs[0]):
-                return self.command(kargs[0], kargs[1:],  
-                                        commander = self.commander)
-
-            elif self.lnk_script_commander.has_command(kargs[0]):
-                return self.command(kargs[0], kargs[1:], commander =
-                                    self.lnk_script_commander)
-
-            #TODO: this won't work if they are moving aronud
-            # we don't know what possible commands there are
-            elif self.script_commander.has_command(kargs[0]):
-                return self.command(kargs[0], kargs[1:], commander =
-                                    self.script_commander, base_dir =
-                                    os.getcwd())
-
-        return None
-
 
 
 def install_ipython_completers():  # pragma: no cover

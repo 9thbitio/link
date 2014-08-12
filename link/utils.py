@@ -1,4 +1,16 @@
 import os
+# -*- coding: utf-8 -*-
+
+"""
+link.utils
+~~~~~~~~~~~~
+
+Commonly used utility functions in the link code
+
+:copyright: (c) 2013 by David Himrod
+:license: Apache2, see LICENSE for more details.
+
+"""
 
 def load_json_file(file_name):
     """
@@ -13,16 +25,23 @@ def load_json_file(file_name):
     import json
     try:
         return json.loads(data)
-    except:
-        raise Exception("Error json decoding file %s" % file_name)
+    except Exception as e:
+        raise ValueError("Error json decoding file: %s error: %s" % (file_name,
+                                                                     e.message))
 
 def list_to_dataframe(rows, names):
-    from pandas.version import version
-    if version < '0.8.0':
-        import pandas._tseries as lib
-    else:
-        import pandas.lib as lib
+    """
+    Turns a rows of data into a dataframe and gives them the column names
+    specified
+
+    :params rows: the data you want to put in the dataframe
+    :params names: the column names for the dataframe
+    """
     from pandas import DataFrame
+    try:
+        import pandas._tseries as lib
+    except ImportError:
+        import pandas.lib as lib
 
     if isinstance(rows, tuple):
         rows = list(rows)
@@ -33,3 +52,13 @@ def list_to_dataframe(rows, names):
         columns[k] = lib.convert_sql_column(v)
 
     return DataFrame(columns, columns=names)
+
+
+from itertools import izip, chain, repeat
+
+def array_pagenate(n, iterable, padvalue=None):
+    """
+    takes an array like [1,2,3,4,5] and splits it into even chunks.  It will
+    pad the end with your default value to make fully even.  
+    """
+    return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)

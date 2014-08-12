@@ -1,15 +1,17 @@
 from link import Wrapper
 from link.utils import list_to_dataframe
+import defaults
 
 class DBCursorWrapper(Wrapper):
     """
     Wraps a select and makes it easier to tranform the data
     """
-    def __init__(self, cursor, query = None, wrap_name = None):
+    def __init__(self, cursor, query = None, wrap_name = None, args=None):
         self.cursor = cursor
         self._data = None
         self._columns = None
         self.query = query
+        self.args = args or ()
         super(DBCursorWrapper, self).__init__(wrap_name, cursor)
     
     @property
@@ -46,20 +48,30 @@ class DBCursorWrapper(Wrapper):
     def __iter__(self):
         return self.data.__iter__()
     
-    def __call__(self, query = None):
+    def __call__(self, query = None, args=()):
         """
         Creates a cursor and executes the query for you
         """
-        if not query:
-            query = self.query
-        self.cursor.execute(query)
+        args = args or self.args
+
+        query = query or self.query
+        #sqlite db does not take in args...so i have to do this
+        #TODO: Create custom dbcursor wrappers for different database types
+        if args:
+            self.cursor.execute(query, args=args)
+        else:
+            self.cursor.execute(query)
+
         return self
+
 
 class DBConnectionWrapper(Wrapper):
     """
     wraps a database connection and extends the functionality
     to do tasks like put queries into dataframes
     """
+    CURSOR_WRAPPER = DBCursorWrapper
+
     def __init__(self, wrap_name = None, chunked=False, **kwargs):
         
         if kwargs:
@@ -84,16 +96,15 @@ class DBConnectionWrapper(Wrapper):
         
         return self.chunks.get(chunk_name)
 
-    def execute(self, query):
+    def execute(self, query, args = ()):
         """
         Creates a cursor and executes the query for you
         """
         cursor = self._wrapped.cursor()
-        cursor.execute(query)
-        return cursor
+        return self.CURSOR_WRAPPER(cursor, query, args=args)()
 
     #TODO: Add in the ability to pass in params and also index 
-    def select_dataframe(self, query):
+    def select_dataframe(self, query, args=()):
         """
         Select everything into a datafrome with the column names
         being the names of the colums in the dataframe
@@ -104,17 +115,10 @@ class DBConnectionWrapper(Wrapper):
             raise Exception("pandas required to select dataframe. Please install"  + 
                             "sudo easy_install pandas")
 
-        cursor = self.execute(query)
-        data = cursor.fetchall()
-        columns = [x[0].lower() for x in cursor.description]
-        
-        #check to see if they have duplicate column names
-        if len(columns)>len(set(columns)):
-            raise Exception("Cannot have duplicate column names " +
-                            "in your query %s, please rename" % columns)
-        return list_to_dataframe(data, columns) 
+        cursor = self.execute(query, args = args)
+        return cursor.as_dataframe()
     
-    def select(self, query=None, chunk_name = None):
+    def select(self, query=None, chunk_name = None, args=()):
         """
         Run a select and just return everything. If you have pandas installed it
         is better to use select_dataframe if you want to do data manipulation
@@ -130,7 +134,7 @@ class DBConnectionWrapper(Wrapper):
         if not cursor:
             raise Exception("no cursor found")
 
-        return DBCursorWrapper(cursor, query)()
+        return self.CURSOR_WRAPPER(cursor, query, args=args)()
  
     def create_connection(self):
         """
@@ -141,8 +145,44 @@ class DBConnectionWrapper(Wrapper):
         """
         pass
 
+    def use(self, database):
+        """
+        Switch to using a specific database
+        """
+        pass
+    
+    def databases(self):
+        """
+        Returns the databases that are available
+        """
+        pass
 
-class SqliteDBConnectionWrapper(DBConnectionWrapper):
+    def tables(self):
+        """
+        Returns the tables that are available
+        """
+        pass
+
+    def now(self, offset=None):
+        """
+        Returns the time now according to the database.  You can also pass in an
+        offset so that you can add or subtract hours from the current
+        """
+        try:
+            return self.select('select now()').data[0][0]
+        except:
+            raise Exception("the default select now() does not work on this database"
+                            + " override this function if you would like this "
+                            + "feature for your database ")
+    @property
+    def command(self):
+        """
+        Here is the command for doing the mysql command
+        """
+        raise NotImplementedError('no shell command for using this database')
+
+
+class SqliteDB(DBConnectionWrapper):
     """
     A connection wrapper for a sqlite database
     """
@@ -241,11 +281,67 @@ class SqliteDBConnectionWrapper(DBConnectionWrapper):
         """
         self.run_command('sqlite3 %s' % self.path)
 
-    
-class MysqlDBConnectionWrapper(DBConnectionWrapper):
+    def execute(self, query):
+        """
+        Creates a cursor and executes the query for you
+        """
+        cursor = self._wrapped.cursor()
+        return DBCursorWrapper(cursor, query)()
 
+
+SqliteDBConnectionWrapper = SqliteDB
+
+class NetezzaDB(DBConnectionWrapper):
+    
     def __init__(self, wrap_name=None, user=None, password=None, 
                  host=None, database=None):
+        self.user = user
+        self.password = password
+        self.host = host
+        self.database = database
+        super(NetezzaDB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the Netezza 
+        class which get's called in it's initializer
+        """
+        import pyodbc
+        connection_str="DRIVER={%s};SERVER=%s;DATABASE=%s;UID=%s;PWD=%s" % (
+              "NetezzaSQL",self.host, self.database, self.user, self.password)
+        #connect to a netezza database, you need ansi=True or it's all garbled
+        return pyodbc.connect(connection_str, ansi=True)
+
+
+class VerticaDB(DBConnectionWrapper):
+    
+    def __init__(self, wrap_name=None, user=None, password=None, 
+                 host=None, database=None):
+        self.user = user
+        self.password = password
+        self.host = host
+        self.database = database
+        super(VerticaDB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the VerticaDB 
+        class which get's called in it's initializer
+        """
+        import pyodbc
+        connection_str=(
+                        "DRIVER={%s};SERVER=%s;DATABASE=%s;UID=%s;PWD=%s" 
+                        % 
+                        ("VerticaSQL",self.host, self.database, self.user, self.password)
+                       )
+        #connect to a netezza database, you need ansi=True or it's all garbled
+        return pyodbc.connect(connection_str, ansi=True)
+    
+
+class MysqlDB(DBConnectionWrapper):
+
+    def __init__(self, wrap_name=None, user=None, password=None, 
+            host=None, database=None, port=defaults.MYSQL_DEFAULT_PORT):
         """
         A connection for a Mysql Database.  Requires that
         MySQLdb is installed
@@ -259,7 +355,8 @@ class MysqlDBConnectionWrapper(DBConnectionWrapper):
         self.password = password
         self.host = host
         self.database = database
-        super(MysqlDBConnectionWrapper, self).__init__(wrap_name=wrap_name)
+        self.port=port
+        super(MysqlDB, self).__init__(wrap_name=wrap_name)
 
     def create_connection(self):
         """
@@ -278,14 +375,89 @@ class MysqlDBConnectionWrapper(DBConnectionWrapper):
         conv[MySQLdb.constants.FIELD_TYPE.NEWDECIMAL] = float
         conn = MySQLdb.connect(host=self.host, user=self.user, 
                                db=self.database, passwd=self.password,
-                               conv=conv)
+                               conv=conv, port=self.port)
         return conn
+
+    def use(self, database):
+        return self.select('use %s' % database).data
+
+    def databases(self):
+        return self.select('show databases').data
+
+    def tables(self):
+        return self.select('show tables').data
+
+    def now(self):
+        # not sure that the [0][0] will always be true...but it works now
+        return self.select('select now()').data[0][0]
+    
+    @property
+    def command(self):
+        """
+        Here is the command for doing the mysql command
+        """
+        return  'mysql -A -u %s -p%s -h %s %s' % (self.user, self.password,
+                                                     self.host, self.database)
+
+
+class PostgresDB(DBConnectionWrapper):
+
+    def __init__(self, wrap_name=None, user=None, password=None, 
+                 host=None, database=None, port=defaults.POSTGRES_DEFAULT_PORT):
+        """
+        A connection for a Postgres Database.  Requires that
+        psycopg2 is installed
+
+        :param user: your user name for that database 
+        :param password: Your password to the database
+        :param host: host name or ip of the database server
+        :param database: name of the database on that server 
+        """
+        self.user = user
+        self.password = password
+        self.host = host
+        self.database = database
+        self.port = port
+        super(PostgresDB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the DbConnectionWrapper
+        class which get's called in it's initializer
+        """
+        import psycopg2
+        
+        # make it so that it uses floats instead of those Decimal objects
+        # these are really slow when trying to load into numpy arrays and 
+        # into pandas
+        DEC2FLOAT = psycopg2.extensions.new_type(
+                    psycopg2.extensions.DECIMAL.values,
+                        'DEC2FLOAT',
+                            lambda value, curs: float(value) if value is not None else None)
+        psycopg2.extensions.register_type(DEC2FLOAT)
+
+        conn = psycopg2.connect(host=self.host, port=self.port,  user=self.user, 
+                                    password=self.password, database=self.database )
+        return conn
+
+    def use(self, database):
+        return self.select('use %s' % database).data
+
+    def databases(self):
+        return self.select('select distinct table_catalog, table_schema from information_schema.tables').data
+
+    def tables(self):
+        return [ x[0] for x in self.select('select table_name from information_schema.tables where table_schema = (select current_schema())').data ]
+
+    def now(self):
+        # not sure that the [0][0] will always be true...but it works now
+        return self.select('select now()').data[0][0]
 
     def __call__(self, query = None, outfile= None):
         """
         Create a shell connection to this mysql instance
         """
-        cmd = 'mysql -A -u %s -p%s -h %s %s' % (self.user, self.password,
-                                                     self.host, self.database)
+        cmd = 'psql -U %s -W%s -h %s %s %s' % (self.user, self.password,
+                                                     self.host, self.port, self.database)
         self.run_command(cmd)
 

@@ -1,7 +1,7 @@
 from link import Wrapper
 from link.utils import list_to_dataframe
 
-class NoSqlConnectionWrapper(Wrapper):
+class NoSqlDB(Wrapper):
     """
     wraps a database connection and extends the functionality
     to do tasks like put queries into dataframes
@@ -61,12 +61,12 @@ class NoSqlConnectionWrapper(Wrapper):
         """
         pass
 
+NoSqlConnectionWrapper = NoSqlDB
 
-class HbaseNoSqlConnectionWrapper(NoSqlConnectionWrapper):
+class HbaseDB(NoSqlConnectionWrapper):
     """
     A connection wrapper for a sqlite database
     """
-    import happybase 
     #from hbase import Hbase 
 
     def __init__(self, wrap_name=None, host=None, version='0.92'):
@@ -87,7 +87,8 @@ class HbaseNoSqlConnectionWrapper(NoSqlConnectionWrapper):
         Override the create_connection from the DbConnectionWrapper
         class which get's called in it's initializer
         """
-        return self.happybase.Connection(self.host,
+        import happybase 
+        return happybase.Connection(self.host,
                                          port=self.port,compat=self.version)
 
     def __call__(self):
@@ -96,6 +97,7 @@ class HbaseNoSqlConnectionWrapper(NoSqlConnectionWrapper):
         """
         self.run_command('hbase shell')
 
+HbaseNoSqlConnectionWrapper = HbaseDB
 
 class MongoDB(NoSqlConnectionWrapper):
     """

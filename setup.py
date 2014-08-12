@@ -1,59 +1,50 @@
 #!/usr/bin/env python
 from setuptools import setup
+import os
+import link
 
-VERSION = (0, 0, 5)
-NAME = 'link'
+dir = os.path.split(os.path.abspath(__file__))[0]
+
+
 DESCRIPTION = "Easy and consistent access to the objects you care about"
 LONG_DESCRIPTION = "Easy and consistent access to the objects you care about"
 URL = ''
-LICENSE = 'MIT'
 DOWNLOAD_URL = ''
 CLASSIFIERS = ['Development Status :: 4 - Beta',     
                'Programming Language :: Python',
                'Programming Language :: Python :: 2'
               ]
-AUTHOR = ''
 EMAIL = ''
-VERSION_STRING = '.'.join(map(str,VERSION))
 SETUP_ARGS = {}
 DATA_FILES = [('link/configs', ['link/configs/link.config'])]
-REQUIRES = ['requests >=0.11', 'MySQL-python'] 
+REQUIRES = ['requests>=0.10']
 
 try:
     import numpy
     import pandas
+    import xmltodict
 except:
     print "We highly suggest you install numpy and Pandas for some functionality" 
     print "easy_install numpy"
     print "easy_install pandas"
-
-def write_version(filename='link/version.py'):
-    """
-    Write out the version python file to the link directory before installing
-    """
-    cnt = "version = '%s'\nversion_details = %s\n"
-    a = open(filename, 'w')
-    try:
-        a.write(cnt % (VERSION_STRING, VERSION))
-    finally:
-        a.close()
-
+    print "xmltodict is used in Alexa's json wrapper"
+    print "pip install xmltodict"  
+  
 # write out the version file so we can keep track on what version the built
 # package is
-write_version()
 
 # call setup so it can build the package
-setup(name=NAME,
-      version=VERSION_STRING,
+setup(name=link.__title__,
+      version=link.__version__,
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
-      license=LICENSE,
+      license=link.__license__,
       maintainer_email=EMAIL,
-      maintainer=AUTHOR,
+      maintainer=link.__author__,
       url=URL,
       packages=['link', 'link.wrappers', 'link.configs'],
       #package_data = {'link.configs': ['link.configs/*config']},
       install_requires = REQUIRES,
-      data_files = DATA_FILES,
+      #data_files = DATA_FILES,
       classifiers=CLASSIFIERS,
       **SETUP_ARGS)
