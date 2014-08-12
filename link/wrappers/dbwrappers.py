@@ -371,14 +371,16 @@ class MysqlDB(DBConnectionWrapper):
         import MySQLdb
         try:
             cursor = self._wrapped.cursor()
+            return self.CURSOR_WRAPPER(cursor, query, args=args)()
         except MySQLdb.OperationalError, e:
             if e[0] == 2006:
                 self._wrapped.close()
                 self._wrapped = self.create_connection()
                 cursor = self._wrapped.cursor()
+                return self.CURSOR_WRAPPER(cursor, query, args=args)()
 
-        return self.CURSOR_WRAPPER(cursor, query, args=args)()
-
+        return
+    
     def create_connection(self):
         """
         Override the create_connection from the DbConnectionWrapper
