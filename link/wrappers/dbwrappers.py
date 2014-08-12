@@ -26,6 +26,8 @@ class DBCursorWrapper(Wrapper):
         if not self._data:
             with closing(self.cursor) as cursor:
                 self._data = cursor.fetchall() 
+                # since we want to close cursor after we pull the data...
+                self._columns = [x[0].lower() for x in self.cursor.description]
         return self._data
 
     def as_dataframe(self):
@@ -37,7 +39,7 @@ class DBCursorWrapper(Wrapper):
         columns = self.columns
         #check to see if they have duplicate column names
         if len(columns)>len(set(columns)):
-            raise Exception("Cannot have duplicate column names " +
+            raise Exception("Cannot have duplicate column names "
                             "in your query %s, please rename" % columns)
         return list_to_dataframe(self.data, columns) 
     
