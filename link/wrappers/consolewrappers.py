@@ -66,7 +66,11 @@ class ConsoleAPIResponseWrapper(APIResponseWrapper):
         """
         Returns whether erorr is NOAUTH
         """
-        return self.json['response'].get('error_id') == 'NOAUTH'
+        try:
+            # some endpoints dont return json
+            return self.json['response'].get('error_id') == 'NOAUTH'
+        except:
+            return False
         
 
 class APIClientMessage(object):
