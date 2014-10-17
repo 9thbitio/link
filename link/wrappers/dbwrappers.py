@@ -14,18 +14,18 @@ class DBCursorWrapper(Wrapper):
         self.query = query
         self.args = args or ()
         super(DBCursorWrapper, self).__init__(wrap_name, cursor)
-    
+
     @property
     def columns(self):
         if not self._columns:
             self._columns = [x[0].lower() for x in self.cursor.description]
         return self._columns
-    
+
     @property
     def data(self):
         if not self._data:
             with closing(self.cursor) as cursor:
-                self._data = cursor.fetchall() 
+                self._data = cursor.fetchall()
                 # since we want to close cursor after we pull the data...
                 self._columns = [x[0].lower() for x in self.cursor.description]
         return self._data
@@ -34,24 +34,24 @@ class DBCursorWrapper(Wrapper):
         try:
             from pandas import DataFrame
         except:
-            raise Exception("pandas required to select dataframe. Please install"  + 
+            raise Exception("pandas required to select dataframe. Please install"  +
                             "sudo easy_install pandas")
         columns = self.columns
         #check to see if they have duplicate column names
         if len(columns)>len(set(columns)):
             raise Exception("Cannot have duplicate column names "
                             "in your query %s, please rename" % columns)
-        return list_to_dataframe(self.data, columns) 
-    
+        return list_to_dataframe(self.data, columns)
+
     def _create_dict(self, row):
-        return dict(zip(self.columns, row)) 
+        return dict(zip(self.columns, row))
 
     def as_dict(self):
         return map(self._create_dict,self.data)
 
     def __iter__(self):
         return self.data.__iter__()
-    
+
     def __call__(self, query = None, args=()):
         """
         Creates a cursor and executes the query for you
@@ -77,7 +77,7 @@ class DBConnectionWrapper(Wrapper):
     CURSOR_WRAPPER = DBCursorWrapper
 
     def __init__(self, wrap_name = None, chunked=False, **kwargs):
-        
+
         if kwargs:
             self.__dict__.update(kwargs)
 
@@ -86,7 +86,7 @@ class DBConnectionWrapper(Wrapper):
         self._chunks = None
         connection = self.create_connection()
         super(DBConnectionWrapper, self).__init__(wrap_name, connection)
-    
+
     @property
     def chunks(self):
         return self._chunks
@@ -96,8 +96,8 @@ class DBConnectionWrapper(Wrapper):
         this is the default lookup of one of the database chunks
         """
         if self.chunks == None:
-           raise Exception('This is not a chunked connection ') 
-        
+           raise Exception('This is not a chunked connection ')
+
         return self.chunks.get(chunk_name)
 
     def execute(self, query, args = ()):
@@ -107,7 +107,7 @@ class DBConnectionWrapper(Wrapper):
         cursor = self._wrapped.cursor()
         return self.CURSOR_WRAPPER(cursor, query, args=args)()
 
-    #TODO: Add in the ability to pass in params and also index 
+    #TODO: Add in the ability to pass in params and also index
     def select_dataframe(self, query, args=()):
         """
         Select everything into a datafrome with the column names
@@ -116,12 +116,12 @@ class DBConnectionWrapper(Wrapper):
         try:
             from pandas import DataFrame
         except:
-            raise Exception("pandas required to select dataframe. Please install"  + 
+            raise Exception("pandas required to select dataframe. Please install"  +
                             "sudo easy_install pandas")
 
         cursor = self.execute(query, args = args)
         return cursor.as_dataframe()
-    
+
     def select(self, query=None, chunk_name = None, args=()):
         """
         Run a select and just return everything. If you have pandas installed it
@@ -139,7 +139,7 @@ class DBConnectionWrapper(Wrapper):
             raise Exception("no cursor found")
 
         return self.CURSOR_WRAPPER(cursor, query, args=args)()
- 
+
     def create_connection(self):
         """
         Override this function to create a depending on the type
@@ -154,7 +154,7 @@ class DBConnectionWrapper(Wrapper):
         Switch to using a specific database
         """
         pass
-    
+
     def databases(self):
         """
         Returns the databases that are available
@@ -190,14 +190,14 @@ class SqliteDB(DBConnectionWrapper):
     """
     A connection wrapper for a sqlite database
     """
-    def __init__(self, wrap_name=None, path=None, chunked = False, 
+    def __init__(self, wrap_name=None, path=None, chunked = False,
                 create_db = True):
         """
         A connection for a SqlLiteDb.  Requires that sqlite3 is
         installed into python
 
-        :param path: Path to the sqllite db.  
-        :param create_db: if True Create if it does not exist in the 
+        :param path: Path to the sqllite db.
+        :param create_db: if True Create if it does not exist in the
                           file system.  Otherwise throw an error
         :param chunked: True if this in a path to a chunked sqlitedb
         """
@@ -205,7 +205,7 @@ class SqliteDB(DBConnectionWrapper):
 
         if not path:
             raise Exception("Path Required to create a sqllite connection")
-        super(SqliteDBConnectionWrapper, self).__init__(wrap_name=wrap_name, 
+        super(SqliteDBConnectionWrapper, self).__init__(wrap_name=wrap_name,
                                                   path=path, chunked = chunked)
 
     def create_connection(self):
@@ -219,7 +219,7 @@ class SqliteDB(DBConnectionWrapper):
             return None
 
         return self._connection_from_path(self.path)
-    
+
     def _connection_from_path(self, path):
         import sqlite3
         db = sqlite3.connect(path)
@@ -228,7 +228,7 @@ class SqliteDB(DBConnectionWrapper):
     @property
     def chunks(self):
         """
-        For sqlite we are chunking by making many files that are of smaller size 
+        For sqlite we are chunking by making many files that are of smaller size
         This makes it easy to distribute out certain parts of it. Directory
         structure looks like this::
 
@@ -256,10 +256,10 @@ class SqliteDB(DBConnectionWrapper):
             if isinstance(chunk,str) or isinstance(chunk,unicode):
                 chunk = self._connection_from_path(chunk)
                 self._chunks[chunk_name] = chunk
-            return chunk  
+            return chunk
 
         raise Exception("there is no chunk")
-    
+
     def _get_chunks(self):
         """
         creates connections for each chunk in the set of them
@@ -278,7 +278,7 @@ class SqliteDB(DBConnectionWrapper):
              for name in dbs
             ]
         )
-    
+
     def __call__(self):
         """
         Run's the command line sqlite application
@@ -296,8 +296,8 @@ class SqliteDB(DBConnectionWrapper):
 SqliteDBConnectionWrapper = SqliteDB
 
 class NetezzaDB(DBConnectionWrapper):
-    
-    def __init__(self, wrap_name=None, user=None, password=None, 
+
+    def __init__(self, wrap_name=None, user=None, password=None,
                  host=None, database=None):
         self.user = user
         self.password = password
@@ -307,7 +307,7 @@ class NetezzaDB(DBConnectionWrapper):
 
     def create_connection(self):
         """
-        Override the create_connection from the Netezza 
+        Override the create_connection from the Netezza
         class which get's called in it's initializer
         """
         import pyodbc
@@ -318,8 +318,8 @@ class NetezzaDB(DBConnectionWrapper):
 
 
 class VerticaDB(DBConnectionWrapper):
-    
-    def __init__(self, wrap_name=None, user=None, password=None, 
+
+    def __init__(self, wrap_name=None, user=None, password=None,
                  host=None, database=None):
         self.user = user
         self.password = password
@@ -329,32 +329,32 @@ class VerticaDB(DBConnectionWrapper):
 
     def create_connection(self):
         """
-        Override the create_connection from the VerticaDB 
+        Override the create_connection from the VerticaDB
         class which get's called in it's initializer
         """
         import pyodbc
         connection_str=(
-                        "DRIVER={%s};SERVER=%s;DATABASE=%s;UID=%s;PWD=%s" 
-                        % 
+                        "DRIVER={%s};SERVER=%s;DATABASE=%s;UID=%s;PWD=%s"
+                        %
                         ("VerticaSQL",self.host, self.database, self.user, self.password)
                        )
         #connect to a netezza database, you need ansi=True or it's all garbled
         return pyodbc.connect(connection_str, ansi=True)
-    
+
 
 class MysqlDB(DBConnectionWrapper):
 
-    def __init__(self, wrap_name=None, user=None, password=None, 
+    def __init__(self, wrap_name=None, user=None, password=None,
             host=None, database=None, port=defaults.MYSQL_DEFAULT_PORT,
             autocommit=True):
         """
         A connection for a Mysql Database.  Requires that
         MySQLdb is installed
 
-        :param user: your user name for that database 
+        :param user: your user name for that database
         :param password: Your password to the database
         :param host: host name or ip of the database server
-        :param database: name of the database on that server 
+        :param database: name of the database on that server
         """
         self.user = user
         self.password = password
@@ -378,9 +378,10 @@ class MysqlDB(DBConnectionWrapper):
                 self._wrapped = self.create_connection()
                 cursor = self._wrapped.cursor()
                 return self.CURSOR_WRAPPER(cursor, query, args=args)()
+            else:
+                raise
 
-        return
-    
+
     def create_connection(self):
         """
         Override the create_connection from the DbConnectionWrapper
@@ -389,14 +390,14 @@ class MysqlDB(DBConnectionWrapper):
         import MySQLdb.connections
         import MySQLdb.converters
         import MySQLdb
-        
+
         # make it so that it uses floats instead of those Decimal objects
-        # these are really slow when trying to load into numpy arrays and 
+        # these are really slow when trying to load into numpy arrays and
         # into pandas
         conv = MySQLdb.converters.conversions.copy()
         conv[MySQLdb.constants.FIELD_TYPE.DECIMAL] = float
         conv[MySQLdb.constants.FIELD_TYPE.NEWDECIMAL] = float
-        conn = MySQLdb.connect(host=self.host, user=self.user, 
+        conn = MySQLdb.connect(host=self.host, user=self.user,
                                db=self.database, passwd=self.password,
                                conv=conv, port=self.port)
         if self.autocommit:
@@ -415,7 +416,7 @@ class MysqlDB(DBConnectionWrapper):
     def now(self):
         # not sure that the [0][0] will always be true...but it works now
         return self.select('select now()').data[0][0]
-    
+
     @property
     def command(self):
         """
@@ -427,16 +428,16 @@ class MysqlDB(DBConnectionWrapper):
 
 class PostgresDB(DBConnectionWrapper):
 
-    def __init__(self, wrap_name=None, user=None, password=None, 
+    def __init__(self, wrap_name=None, user=None, password=None,
                  host=None, database=None, port=defaults.POSTGRES_DEFAULT_PORT):
         """
         A connection for a Postgres Database.  Requires that
         psycopg2 is installed
 
-        :param user: your user name for that database 
+        :param user: your user name for that database
         :param password: Your password to the database
         :param host: host name or ip of the database server
-        :param database: name of the database on that server 
+        :param database: name of the database on that server
         """
         self.user = user
         self.password = password
@@ -451,9 +452,9 @@ class PostgresDB(DBConnectionWrapper):
         class which get's called in it's initializer
         """
         import psycopg2
-        
+
         # make it so that it uses floats instead of those Decimal objects
-        # these are really slow when trying to load into numpy arrays and 
+        # these are really slow when trying to load into numpy arrays and
         # into pandas
         DEC2FLOAT = psycopg2.extensions.new_type(
                     psycopg2.extensions.DECIMAL.values,
@@ -461,7 +462,7 @@ class PostgresDB(DBConnectionWrapper):
                             lambda value, curs: float(value) if value is not None else None)
         psycopg2.extensions.register_type(DEC2FLOAT)
 
-        conn = psycopg2.connect(host=self.host, port=self.port,  user=self.user, 
+        conn = psycopg2.connect(host=self.host, port=self.port,  user=self.user,
                                     password=self.password, database=self.database )
         return conn
 
