@@ -3,6 +3,8 @@ from link.utils import list_to_dataframe
 from contextlib import closing
 import defaults
 
+MYSQL_CONNECTION_ERRORS = (2006, 2013)
+
 class DBCursorWrapper(Wrapper):
     """
     Wraps a select and makes it easier to tranform the data
@@ -373,7 +375,7 @@ class MysqlDB(DBConnectionWrapper):
             cursor = self._wrapped.cursor()
             return self.CURSOR_WRAPPER(cursor, query, args=args)()
         except MySQLdb.OperationalError, e:
-            if e[0] == 2006:
+            if e[0] in MYSQL_CONNECTION_ERRORS:
                 self._wrapped.close()
                 self._wrapped = self.create_connection()
                 cursor = self._wrapped.cursor()
