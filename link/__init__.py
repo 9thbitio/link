@@ -35,7 +35,7 @@ Sample Code::
 
 """
 #import all of this version information
-__version__ = '0.2.3'
+__version__ = '0.2.7'
 __author__ = 'David Himrod'
 __license__ = 'Apache 2.0'
 __copyright__ = 'Copyright 2013 David Himrod'
