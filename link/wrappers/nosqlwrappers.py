@@ -128,3 +128,45 @@ class MongoDB(NoSqlConnectionWrapper):
         Run's the command line sqlite application
         """
         self.run_command('mongo')
+
+
+class CassandraDB(NoSqlConnectionWrapper):
+    """
+    A connection wrapper for a sqlite database
+    """
+    def __init__(self, wrap_name=None, nodes=None, default_fetch_size=None, **kwargs):
+        """
+        CassandraDB wrapper to connect to a Cassandra cluster
+
+        :param nodes: a list of nodes to use for initial connection
+        """
+        self.nodes = nodes
+        self.params = kwargs
+        self.default_fetch_size=default_fetch_size
+
+        # TODO: Where would one configure the default port for link
+        super(CassandraDB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the DbConnectionWrapper
+        class which get's called in it's initializer
+        """
+        from cassandra.cluster import Cluster
+        from cassandra.query import dict_factory
+
+        session = Cluster(self.nodes).connect()
+        
+        # Don't return paged results
+        session.default_fetch_size = self.default_fetch_size
+        
+        # Return in dictionary format for easy parsing to DataFrame
+        session.row_factory = dict_factory
+
+        return session
+
+    def __call__(self):
+        """
+        Run's the command line sqlite application
+        """
+        self.run_command('cqlsh')
