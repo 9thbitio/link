@@ -23,7 +23,7 @@ class LiveRailAuth(AuthBase):
         
         params = {'token':self.token}
         if len(url)>1:
-            existing_params = dict([x.split('=') for x in url[1]])
+            existing_params = dict([x.split('=') for x in url[1].split("&")])
             params.update(existing_params)
         
         params = "&".join(["{}={}".format(x, y) for x,y in params.iteritems()])
