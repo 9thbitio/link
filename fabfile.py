@@ -200,7 +200,7 @@ def push_to_pypi():
     """
     if prompt('would you like to tag a new version first [y/n]') == 'y':
         tag()
-    local('sudo python setup.py sdist upload')
+    local('python setup.py sdist upload')
 
 def prompt_commit():
     """
