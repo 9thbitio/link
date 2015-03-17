@@ -17,7 +17,7 @@ CLASSIFIERS = ['Development Status :: 4 - Beta',
 EMAIL = ''
 SETUP_ARGS = {}
 DATA_FILES = [('link/configs', ['link/configs/link.config'])]
-REQUIRES = ['requests>=0.10']
+REQUIRES = ['requests>=2.0.0', 'requests_oauthlib>=0.4.0' ]
 
 try:
     import numpy
