@@ -186,3 +186,28 @@ class LnkClient(JsonClient):
         post = {"user": self.user, 'password': self.password}
         return self.post('/new', data = json.dumps(post))
 
+class OAuth1API(APIRequestWrapper):
+    """
+    Wrap the Console API
+    """
+    def __init__(self, wrap_name=None, base_url=None, app_key=None,
+                 app_secret=None, oauth_token=None, oauth_token_secret=None):
+        self.app_key = str(app_key)
+        self.app_secret = str(app_secret)
+        self.oauth_token = str(oauth_token)
+        self.oauth_token_secret = str(oauth_token_secret)
+
+        super(OAuth1API, self).__init__(wrap_name = wrap_name, 
+                                                       base_url=base_url,
+                                                       response_wrapper = APIResponseWrapper)
+    def authenticate(self):
+        """
+        Write a custom auth property where we grab the auth token and put it in 
+        the headers
+        """
+        from requests_oauthlib import OAuth1
+        auth = OAuth1(self.app_key, self.app_secret, self.oauth_token,
+                      self.oauth_token_secret)
+        return auth
+
+

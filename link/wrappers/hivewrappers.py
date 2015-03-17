@@ -10,6 +10,10 @@ class HiveCursorWrapper(Wrapper):
     Wraps a select and makes it easier to tranform the data
     """
     def __init__(self, cursor, query=None, wrap_name=None):
+        import pandas as pd
+        #ghetto, but we make the assumption that pandas is not required
+        self.nat = pd.NaT
+        self.nan = pd.np.nan
         self.cursor = cursor
         self._data = None
         self._columns = None
@@ -47,42 +51,49 @@ class HiveCursorWrapper(Wrapper):
             self._dtypes = [field.type for field in schema.fieldSchemas]
 
         return self._dtypes
+    
+    def _return_type(self, item, dtype):
+        if dtype == 'timestamp':
+            try:
+                return datetime.strptime(item, '%Y-%m-%d %H:%M:%S')
+            except:
+                return self.nat
+        
+        if dtype in ('double', 'float'):
+            if item.lower() == 'null':
+                return self.nan
+            return float(item)
+
+        elif dtype in ('i8', 'i16', 'i32', 'i64'):
+            if item.lower() == 'null':
+                return self.nan
+            return int(item)
+
+        return item
 
     def _parse_row(self, row):
         vals = row.split('\t')
         dtypes = self.dtypes
-        out = []
-        for k in range(len(vals)):
-            if dtypes[k] == 'timestamp':
-                out += [datetime.strptime(vals[k], '%Y-%m-%d %H:%M:%S')]
-            elif dtypes[k] in ('double', 'float'):
-                if vals[k].lower() == 'null':
-                    out += [float('nan')]
-                else:
-                    out += [float(vals[k])]
-            elif dtypes[k] in ('i8', 'i16', 'i32', 'i64'):
-                if vals[k].lower() == 'null':
-                    out += [float('nan')]
-                else:
-                    out += [int(vals[k])]
-            else:
-                out += [vals[k]]
-
-        return out
-
+        return [self._return_type(item, dtype) for item, dtype in zip(vals,
+                                                                      dtypes)]
     def _create_dict(self, row):
         return dict(zip(self.columns, row)) 
 
     def as_dict(self):
         return map(self._create_dict, self.data)
 
-    def as_dataframe(self):
+    def as_dataframe(self, chunk_size = None):
         try:
             from pandas import DataFrame
         except:
             raise Exception("pandas required to select dataframe. "
                             "Please install: sudo pip install pandas")
         
+        if chunk_size:
+            rows = self.cursor.fetchN(chunk_size)
+            data = map(self._parse_row, rows)
+            return list_to_dataframe(data, self.columns)
+
         return list_to_dataframe(self.data, self.columns)
 
     def __iter__(self):
