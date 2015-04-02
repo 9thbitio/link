@@ -167,6 +167,30 @@ class Link(object):
     LNK_CONFIG = LNK_DIR + "/link.config"
     DEFAULT_CONFIG = {"dbs": {}, "apis": {}}
 
+    def __init__(self, config_file=None, namespace=None):
+        """
+        Create a new instance of the Link.  Should be done
+        through the instance() method.
+        """
+        # this will be lazy loaded
+        self.__config = None
+        self.wrappers = {}
+        self.fresh(config_file, namespace)
+
+    @classmethod
+    def instance(cls):
+        """
+        Gives you a singleton instance of the Link object
+        which shares your configuration across all other Linked
+        objects.  This is called called to create lnk and for the
+        most part should not be called again
+        """
+        if cls.__link_instance:
+            return cls.__link_instance
+
+        cls.__link_instance = Link()
+        return cls.__link_instance
+
     @classmethod
     def plugins_directory(cls):
         """
@@ -221,20 +245,6 @@ class Link(object):
             return cls.LNK_CONFIG
 
         return None
-
-    @classmethod
-    def instance(cls):
-        """
-        Gives you a singleton instance of the Link object
-        which shares your configuration across all other Linked
-        objects.  This is called called to create lnk and for the
-        most part should not be called again
-        """
-        if cls.__link_instance:
-            return cls.__link_instance
-
-        cls.__link_instance = Link()
-        return cls.__link_instance
 
     def _get_all_wrappers(self, mod_or_package):
         """
@@ -323,16 +333,6 @@ class Link(object):
         # self._commander = self.__config.get('__scripts__')
         self.namespace = namespace
         self.wrappers = {}
-
-    def __init__(self, config_file=None, namespace=None):
-        """
-        Create a new instance of the Link.  Should be done
-        through the instance() method.
-        """
-        # this will be lazy loaded
-        self.__config = None
-        self.wrappers = {}
-        self.fresh(config_file, namespace)
 
     def configure_msg(self, overrides={}, keep_existing=True, verbose=False):
         """
@@ -517,6 +517,9 @@ class Wrapper(Callable):
             return lnk(wrapper)
 
         raise AttributeError("No such attribute found %s" % name)
+    
+    def __getitem__(self, name):
+        return self.__getattr__(name)
 
     def config(self):
         return self.__link_config__
