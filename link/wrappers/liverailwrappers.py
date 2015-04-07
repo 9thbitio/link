@@ -20,6 +20,12 @@ class LiveRailAuth(AuthBase):
     def __call__(self, request):
         # modify and return the request
         url = request.url.split('?')
+
+        # put the api token in the actually request
+        if request.body:
+            request.body += "&token={}".format(self.token)
+        else:
+            request.body = "&token={}".format(self.token)
         
         params = {'token':self.token}
         if len(url)>1:
