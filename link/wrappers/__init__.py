@@ -5,6 +5,7 @@ from apiwrappers import *
 from dbwrappers import *
 from nosqlwrappers import *
 from consolewrappers import *
+from springservewrappers import *
 from atlassianwrappers import *
 from alexawrappers import *
 from hivewrappers import *

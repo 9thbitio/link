@@ -92,6 +92,9 @@ class APIRequestWrapper(Wrapper):
         # Sets the Auth for the requests.session() object
         self.authenticate()
     
+    def set_session_headers(self, name, value):
+        self._wrapped.headers[name]=value
+
     def authenticate(self):
         """
         The authenicate function is called in the init of APIRequestWrapper.  
