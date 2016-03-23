@@ -65,6 +65,9 @@ class LogHandler(object):
     def warn(self, msg, exc_info=False):
         self.write(msg, level=logging.WARN, exc_info=exc_info)
 
+    def error(self, msg, exc_info=False):
+        self.write(msg, level=logging.ERROR, exc_info=exc_info)
+
     def crit(self, msg, exc_info=False):
         self.write(msg, level=logging.CRITICAL, exc_info=exc_info)
 
