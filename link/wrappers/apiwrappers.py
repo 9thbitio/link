@@ -8,7 +8,7 @@ from requests.auth import HTTPBasicAuth
 from functools import wraps
 import json
 from xml.etree import cElementTree as ET
-from link import Wrapper
+from . import Wrapper
 
 
 class APIResponseWrapper(Wrapper):

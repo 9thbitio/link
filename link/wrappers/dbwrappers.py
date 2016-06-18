@@ -1,5 +1,5 @@
-from link import Wrapper
-from link.utils import list_to_dataframe
+from . import Wrapper
+from link._utils import list_to_dataframe
 from contextlib import closing
 import defaults
 

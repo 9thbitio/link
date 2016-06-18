@@ -36,121 +36,17 @@ Sample Code::
 
 """
 
-import os
-import sys
 import inspect
-import json
-from utils import load_json_file
-from subprocess import Popen
-from common import Cacheable
+import json 
+
+from . import __GET_LINK__
+from ._utils import load_json_file, deprecated
+from ._common import Cacheable
+
+from wrappers import Wrapper as _Wrapper
 
 # To set up logging manager
-from _logging_setup import LogHandler
-
-# this gets the current directory of link
-lnk_dir = os.path.split(os.path.abspath(__file__))[0]
-
-
-class Callable(object):
-    """
-    A callable object that has a run_shell method
-    """
-    @property
-    def command(self):
-        """
-        Here is the command for doing the mysql command
-        """
-        raise NotImplementedError('You have not defined a command for this Callable Object')
-
-    def __call__(self, command=None, wait=True):
-        """
-        When you call this Callable it will run the command.  The command can
-        either be a string to run on the shell or a function to run in python
-
-        Right now it only supports string commands for the shell
-        """
-        cmd = command or self.command
-        # import pdb; pdb.set_trace()
-
-        if cmd:
-            p = Popen(cmd, shell=True)
-
-            if wait:
-                p.wait()
-            return p
-
-
-class Commander(object):
-    """
-    Given a dictionary of commands the commander can run them very easily
-    """
-    def __init__(self, commands=None, base_dir=''):
-
-        self.base_dir = base_dir
-        self.commands = {}
-
-        if commands:
-            self.commands = commands
-        elif not commands and self.base_dir:
-            self.commands = dict([(key, key) for key in self.list_base_dir()])
-        else:
-            self.commands = {}
-
-    def set_base_dir(self, base_dir):
-        """
-        set the base dir which will uncache the commands it has stored
-        """
-        self.base_dir = base_dir
-
-    def list_base_dir(self):
-        """
-        list what is in the base_dir, nothing if doesnt exist
-        """
-        try:
-            return os.listdir(self.base_dir)
-        except:
-            return []
-
-    def has_command(self, name):
-        """
-        Returns true if this commander has a command by this name
-        """
-        return self.commands.has_key(name)
-
-    def run_command(self, name="__default__", base_dir='', *kargs, **kwargs):
-        """
-        Run the command in your command dictionary
-        """
-        if not base_dir:
-            base_dir = self.base_dir
-
-        if self.commands:
-            # make a copy of the arra
-            cmd = self.commands.get(name)
-            if cmd:
-                if not isinstance(cmd, list):
-                    cmd = [cmd]
-                # make a copy of it so you don't change it
-                else:
-                    cmd = cmd[:]
-
-                cmd.extend(map(str, kargs))
-                cmd = '%s/%s' % (base_dir, "/".join(cmd))
-                p = Popen(cmd, shell=True)
-                p.wait()
-                return p
-
-        raise(Exception("No such command %s " % name))
-
-    def command(self, name=None):
-        """
-        Returns the command function that you can pass arguments into
-        """
-        def runner(*kargs, **kwargs):
-            return self.run_command(name, *kargs, **kwargs)
-
-        return runner
-
+from _logging_setup import LogHandler as _LogHandler
 
 class Link(object):
     """
@@ -162,89 +58,18 @@ class Link(object):
     __link_instance = None
     __msg = None
 
-    LNK_USER_DIR = '%s/.link' % os.getenv('HOME')
-    LNK_DIR = os.getenv('LNK_DIR') or LNK_USER_DIR
-    LNK_CONFIG = LNK_DIR + "/link.config"
     DEFAULT_CONFIG = {"dbs": {}, "apis": {}}
 
-    def __init__(self, config_file=None, namespace=None):
+    def __init__(self, config_file=None):
         """
         Create a new instance of the Link.  Should be done
         through the instance() method.
         """
         # this will be lazy loaded
         self.__config = None
+        self._config_file = config_file 
         self.wrappers = {}
-        self.fresh(config_file, namespace)
-
-    @classmethod
-    def instance(cls):
-        """
-        Gives you a singleton instance of the Link object
-        which shares your configuration across all other Linked
-        objects.  This is called called to create lnk and for the
-        most part should not be called again
-        """
-        if cls.__link_instance:
-            return cls.__link_instance
-
-        cls.__link_instance = Link()
-        return cls.__link_instance
-
-    @classmethod
-    def plugins_directory(cls):
-        """
-        Tells you where the external wrapper plugins exist
-        """
-        if cls.LNK_DIR and os.path.exists(cls.LNK_DIR):
-            plugin_dir = cls.LNK_DIR + "/plugins"
-            if not os.path.exists(plugin_dir):
-                os.makedirs(plugin_dir)
-            return plugin_dir
-
-        raise Exception("Problem creating plugins, Link directory does not exist")
-
-    @classmethod
-    def plugins_directory_tmp(cls):
-        """
-        Tells you where the external wrapper plugins exist
-        """
-        plugins = cls.plugins_directory()
-        tmp = plugins + "/tmp"
-
-        if not os.path.exists(tmp):
-            os.makedirs(tmp)
-
-        return tmp
-
-    @classmethod
-    def config_file(cls):
-        """
-        Gives you the global config based on the hierchial lookup::
-
-            first check $LNK_DIR/link.config
-            then check ./link.config
-
-        """
-
-        # if there is a user global then use that
-        if os.path.exists(cls.LNK_CONFIG):
-            return cls.LNK_CONFIG
-
-        # if they ore in iPython and there is no user config
-        # lets create the user config for them
-        if "IPython" in sys.modules:
-            if not os.path.exists(cls.LNK_DIR):
-                print "Creating user config dir %s " % cls.LNK_DIR
-                os.makedirs(cls.LNK_DIR)
-
-            print "Creating default user config "
-            new_config = open(cls.LNK_CONFIG, 'w')
-            new_config.write(json.dumps(cls.DEFAULT_CONFIG))
-            new_config.close()
-            return cls.LNK_CONFIG
-
-        return None
+        self.refresh(config_file)
 
     def _get_all_wrappers(self, mod_or_package):
         """
@@ -306,7 +131,7 @@ class Link(object):
         """
         Lazy load the config so that any errors happen then
         """
-        if not self.__config_file:
+        if not self._config_file:
             # If there is not config file then return an error.
             # TODO: Refactor the config code, it's overly confusing
             raise Exception("""No config found.  Set environment variable LNK_DIR to
@@ -314,24 +139,26 @@ class Link(object):
                         #.link/link.config file in your HOME directory""")
 
         if not self.__config:
-            self.__config = load_json_file(self.__config_file)
+            self.__config = load_json_file(self._config_file)
 
         return self.__config
-
-    def fresh(self, config_file=None, namespace=None):
+    
+    def refresh(self, config_file=None):
         """
         sets the environment with a fresh config or namespace that is not
         the defaults if config_file or namespace parameters are given
         """
-        if not config_file:
-            config_file = self.config_file()
 
-        self.__config_file = config_file
+        #if they don't pass in a config file just get the normal_one
+        if config_file:
+            self.__config_file = config_file 
+
+        self._config_file
+        #by setting this to none you are clearing_config
         self.__config = None
         # I don't think i want to support this feature anymore
         # self._commander = self.__config.get('__cmds__')
         # self._commander = self.__config.get('__scripts__')
-        self.namespace = namespace
         self.wrappers = {}
 
     def configure_msg(self, overrides={}, keep_existing=True, verbose=False):
@@ -355,7 +182,7 @@ class Link(object):
             log_conf = self._config.get('msg', {})
             log_conf.update(overrides)
 
-        self.__msg = LogHandler(log_conf, verbose)
+        self.__msg = _LogHandler(log_conf, verbose)
         return self.__msg
 
     # The fact that Link is a singleton should ensure that only one instance of
@@ -369,7 +196,7 @@ class Link(object):
             logging setup
         """
         if not self.__msg:
-            self.__msg = LogHandler(self._config.get('msg', {}), verbose)
+            self.__msg = _LogHandler(self._config.get('msg', {}), verbose)
         return self.__msg
 
     def __getattr__(self, name):
@@ -381,7 +208,7 @@ class Link(object):
         try:
             return self.__getattribute__(name)
         except Exception as e:
-            return self(wrap_name=name, **self._config[name].copy())
+            return self.get_link(wrap_name=name, **self._config[name].copy())
 
     def config(self, config_lookup=None):
         """
@@ -399,19 +226,26 @@ class Link(object):
             return ret
 
         return ret
-
+    
+    @deprecated
     def __call__(self, wrap_name=None, *kargs, **kwargs):
         """
-        Get a wrapper given the name or some arguments
+        Deprecated, please use get_link
+        """
+        return self.get_link(wrap_name, *kargs, **kwargs)
+
+    def get_link(self, link_name=None, *kargs, **kwargs):
+        """
+        Get a configured link object by it's name 
         """
         wrap_config = {}
 
-        if wrap_name:
-            wrap_config = self.config(wrap_name)
+        if link_name:
+            wrap_config = self.config(link_name)
             # if its just a string, make a wrapper that is preloaded with
             # the string as the command.
             if isinstance(wrap_config, str) or isinstance(wrap_config, unicode):
-                return Wrapper(__cmd__=wrap_config)
+                return _Wrapper(__cmd__=wrap_config)
 
             wrap_config = wrap_config.copy()
 
@@ -422,7 +256,10 @@ class Link(object):
 
         # if it is here we want to remove before we pass through
         wrapper = self._get_wrapper(wrap_config.pop('wrapper', None))
-        return wrapper(wrap_name=wrap_name, **wrap_config)
+
+        wrap_config.pop('wrap_name', None)
+
+        return wrapper(wrap_name=link_name, **wrap_config)
 
     def _get_wrapper(self, wrapper):
         """
@@ -439,90 +276,7 @@ class Link(object):
             except AttributeError as e:
                 raise Exception('Wrapper cannot be found by the' +
                                 ' link class when loading: %s ' % (wrapper))
-        return Wrapper
-
-    def install_plugin(self, file=None, install_global=False):
-        """
-        Install the plugin in either their user plugins directory or
-        in the global plugins directory depending on what they want to do
-        """
-        if install_global:
-            cp_dir = os.path.dirname(__file__) + '/plugins'
-        else:
-            cp_dir = self.plugins_directory()
-
-        import shutil
-        print "installing %s into directory %s " % (file, cp_dir)
-        try:
-            shutil.copy(file, cp_dir)
-        except:
-            print "error moving files"
-
-
-lnk = Link.instance()
-
-
-class Wrapper(Callable):
-    """
-    The wrapper wraps a piece of the configuration.
-    """
-    _wrapped = None
-    cmdr = None
-
-    def __init__(self, wrap_name=None, wrapped_object=None, **kwargs):
-        super(Wrapper, self).__init__()
-        self.wrap_name = wrap_name
-        self._wrapped = wrapped_object
-
-        self.commander = Commander(kwargs.get("__cmds__"))
-        self.lnk_script_commander = Commander(base_dir =
-                                         '%s/scripts' % lnk_dir)
-        self.script_commander = Commander(base_dir =
-                                         '%s/scripts' % os.getcwd())
-        self.cmdr = self.script_commander
-        self.loaded = True
-        self.cache = {}
-        self.__dict__['__link_config__'] = kwargs
-
-    def __getattr__(self, name):
-        """
-        wrap a special object if it exists
-        """
-        # first look if the Wrapper object itself has it
-        try:
-            return self.__getattribute__(name)
-        except AttributeError as e:
-            pass
-
-        if self._wrapped is not None:
-            # if it has a getattr then try that out otherwise go to getattribute
-            # TODO: Deeply understand __getattr__ vs __getattribute__.
-            # this might not be correct
-            try:
-                return self._wrapped.__getattr__(name)
-            except AttributeError as e:
-                try:
-                    return self._wrapped.__getattribute__(name)
-                except AttributeError as e:
-                    raise AttributeError("No Such Attribute in wrapper %s" % name)
-
-        # then it is trying to unpickle itself and there is no setstate
-        # TODO: Clean this up, it's crazy and any changes cause bugs
-        if name == '__setstate__':
-            raise AttributeError("No such attribute found %s" % name)
-
-        # call the wrapper to create a new one
-        wrapper = '%s.%s' % (self.wrap_name, name)
-        if self.wrap_name:
-            return lnk(wrapper)
-
-        raise AttributeError("No such attribute found %s" % name)
-    
-    def __getitem__(self, name):
-        return self.__getattr__(name)
-
-    def config(self):
-        return self.__link_config__
+        return _Wrapper
 
 
 def install_ipython_completers():  # pragma: no cover
@@ -531,7 +285,7 @@ def install_ipython_completers():  # pragma: no cover
     from IPython.utils.generics import complete_object
     import inspect
 
-    @complete_object.when_type(Wrapper)
+    @complete_object.when_type(_Wrapper)
     def complete_wrapper(obj, prev_completions):
         """
         Add in all the methods of the _wrapped object so its
@@ -556,11 +310,4 @@ def install_ipython_completers():  # pragma: no cover
         """
         return prev_completions + [c for c in obj.config().keys()]
 
-# Importing IPython brings in about 200 modules, so we want to avoid it unless
-# we're in IPython (when those modules are loaded anyway).
-# Code attributed to Pandas, Thanks Wes
-if "IPython" in sys.modules:  # pragma: no cover
-    try:
-        install_ipython_completers()
-    except Exception:
-        pass
+

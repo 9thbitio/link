@@ -1,10 +1,13 @@
 """
 """
-from link.common import APIResponse
-from link.wrappers import APIRequestWrapper, APIResponseWrapper
-from requests.auth import AuthBase
+import types
 import json
 import requests
+
+from link._common import APIResponse
+from link._utils import array_pagenate
+from . import APIRequestWrapper, APIResponseWrapper
+from requests.auth import AuthBase
 
 
 class ConsoleAuth(AuthBase):
@@ -147,8 +150,6 @@ class APIClientMessage(object):
         self._message = message
 
 
-from link.utils import array_pagenate
-import types
 
 class APIClient(APIClientMessage):
     """

@@ -1,7 +1,7 @@
 import contextlib
 
-from link import Wrapper
-from link.utils import list_to_dataframe
+from . import Wrapper
+from link._utils import list_to_dataframe
 from datetime import datetime
 from dbwrappers import DBConnectionWrapper, DBCursorWrapper
 

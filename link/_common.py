@@ -1,21 +1,8 @@
 import json
+import datetime
+import types
 
-#class Node(object):
-    #"""
-    #This is a node for your data
-    #"""
-    #def __init__(self, data = None, key=None, hierarchy = None, rules = None):
-        #self.key = key 
-
-        #self.hierarchy = hierarchy
-        #if hierarchy == None:
-            #self.hierarchy = []
-
-        #self.data = data
-        #super(Node, self).__init__()
-
-    #def apply(self):
-        #pass
+from ._utils import array_pagenate
 
 class Cacheable(object):
     """
@@ -50,26 +37,6 @@ class Cacheable(object):
         """
         return self.cache.get(key)
 
-    
-#class Result(Node):
-    #"""
-    #A result of a rule being applied to the data
-    #"""
-    #def __init__(self, result, data=None, actions=None, key=None, hierarchy=None):
-        #self.result = result
-        #self.data = data
-        #self.actions = actions
-        #super(Result, self).__init__(key, hierarchy)
-
-#class Rule(object):
-    #"""
-    #A rule is applied to data and if a row of data passes then the actions are
-    #taking actions are 
-    #"""
-
-    #def __init__(self, data = None, results= None):
-        #self.data = data
-        #self.actions = actions
 
 class Single(object):
     """
@@ -82,71 +49,6 @@ class Single(object):
                 cls, *args, **kwargs)
         return cls._instance
 
-#class Data(Single, Cacheable):
-    #"""
-    #Encapsulates data from a database
-    #"""
-    #def __init__(self, data = None,query = None, table = None):
-        #self.table = table
-        #self.data = data
-        #self.query = query
-        #super(Data, self).__init__()
-
-    #def __call__(self):
-        #print self.table
-        #print self.data
-        #print self.query
-
-    #def __iter__(self):
-        #"""
-        #If it's never set then throw an exception
-        #"""
-        #if self.data == None:
-            #raise Exception("No data to iterate through")
-
-        #return self.data.__iter__()
-
-#class DataSet(Single, Cacheable):
-    #"""
-    #Encapsulates data from a database
-    #"""
-    #def __init__(self, data = None):
-        #self.data = data
-        #super(Data, self).__init__()
-    
-    #def __call__(self):
-        #pass
-
-    #def cache_get(self):
-        #pass
-
-    #def __iter__(self):
-        #"""
-        #If it's never set then throw an exception
-        #"""
-        #if self.data == None:
-            #raise Exception("No data to iterate through")
-
-        #return self.data.__iter__()
-
-    #def refresh(self):
-        #"""
-        #A function that allows you to refresh a full dataset.  
-        #"""
-        #pass
-
-#class Action(object):
-    #pass
-
-#class Actions(object):
-
-    #def __init__(self, actions = None, query = None, table = None):
-        #self.actions = actions
-        #self.table = table
-        #self.query = query
-        #super(Actions, self).__init__()
-
-import datetime
 
 class APIEncoder(json.JSONEncoder):
     """
@@ -189,10 +91,6 @@ class APIObject(object):
     @classmethod
     def api_object_name(cls):
         return cls.__name__.lower() 
-
-    #@property 
-    #def json(self):
-        #return self._json
 
     def __getitem__(self, name):
         try:
@@ -246,8 +144,6 @@ class APIObject(object):
         self._message = message
 
 
-from utils import array_pagenate
-import types
 
 class APIResponse(APIObject):
     """
@@ -275,15 +171,6 @@ class APIResponse(APIObject):
     
     def seek(self, *kargs):
         raise NotImplementedError()
-
-    #def __getitem__(self, key):
-        #return self.response[key]
-    
-    #def get(self, key):
-        #return self.response.get(key)
- 
-    #def iteritems(self):
-        #return self.message.iteritems()
 
     def __str__(self):
         return json.dumps(self.response, cls = APIEncoder)

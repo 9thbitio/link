@@ -1,4 +1,7 @@
 import os
+import warnings
+
+from itertools import izip, chain, repeat
 # -*- coding: utf-8 -*-
 
 """
@@ -53,12 +56,25 @@ def list_to_dataframe(rows, names):
 
     return DataFrame(columns, columns=names)
 
-
-from itertools import izip, chain, repeat
-
 def array_pagenate(n, iterable, padvalue=None):
     """
     takes an array like [1,2,3,4,5] and splits it into even chunks.  It will
     pad the end with your default value to make fully even.  
     """
     return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)
+
+def deprecated(func):
+    '''
+    This is a decorator which can be used to mark functions
+    as deprecated. It will result in a warning being emitted
+    when the function is used.
+    '''
+    def new_func(*args, **kwargs):
+        warnings.warn("Call to deprecated function {}.".format(func.__name__),
+                      category=DeprecationWarning)
+        return func(*args, **kwargs)
+    new_func.__name__ = func.__name__
+    new_func.__doc__ = func.__doc__
+    new_func.__dict__.update(func.__dict__)
+    return new_func
+ 

@@ -1,7 +1,7 @@
 """
 """
-from link.common import APIResponse
-from link.wrappers import APIRequestWrapper, APIResponseWrapper
+from link._common import APIResponse
+from . import APIRequestWrapper, APIResponseWrapper
 from requests.auth import AuthBase
 import json
 import requests
