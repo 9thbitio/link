@@ -11,7 +11,7 @@ from xml.etree import cElementTree as ET
 from . import Wrapper
 
 
-class APIResponseWrapper(Wrapper):
+class APIResponseWrapper(object):
     """
     Wrap an API response and make it easy to parse out
     json or XML
@@ -19,7 +19,7 @@ class APIResponseWrapper(Wrapper):
     def __init__(self, wrap_name = None, response = None):
         self._json = None
         self._xml = None
-        super(APIResponseWrapper, self).__init__(wrap_name, response)
+        self.raw = response
 
     @property
     def json(self):
@@ -28,9 +28,9 @@ class APIResponseWrapper(Wrapper):
         """
         if not self._json:
             try:
-                self._json = json.loads(self.content)
+                self._json = json.loads(self.raw.content)
             except:
-                raise ValueError("Response is not valid json %s " % self.content)
+                raise ValueError("Response is not valid json %s " % self.raw.content)
         return self._json
 
     @property
@@ -40,9 +40,9 @@ class APIResponseWrapper(Wrapper):
         """
         if not self._xml:
             try:
-                self._xml = ET.XML(self.content)
+                self._xml = ET.XML(self.raw.content)
             except:
-                raise ValueError("Response is not valid xml %s " % self.content)
+                raise ValueError("Response is not valid xml %s " % self.raw.content)
         return self._xml
 
     @property
@@ -50,7 +50,7 @@ class APIResponseWrapper(Wrapper):
         """
         Returns the wrappers error by default but can be overridden 
         """
-        return self._wrapped.error
+        return self.raw.error
  
     def tostring(self):
         """

@@ -1,4 +1,6 @@
 import os
+import json
+
 import warnings
 
 from itertools import izip, chain, repeat
@@ -19,13 +21,11 @@ def load_json_file(file_name):
     """
     given a file name this function will json decode it and
     return a dictionary
+    
+    Raises exception if the file does not exist
     """
-    try:
-        data = open(file_name, 'r').read()
-    except:
-        raise Exception("No such file %s" % file_name)
+    data = open(file_name, 'r').read()
 
-    import json
     try:
         return json.loads(data)
     except Exception as e:

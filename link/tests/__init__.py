@@ -1,8 +1,8 @@
 import unittest
 import os
 from mock import Mock, MagicMock
-from link.utils import load_json_file
-from link.common import APIObject
+from link._utils import load_json_file
+from link._common import APIObject
 
 TESTS_DIR = os.path.dirname(__file__)
 

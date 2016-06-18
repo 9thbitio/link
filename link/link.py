@@ -66,8 +66,7 @@ class Link(object):
         through the instance() method.
         """
         # this will be lazy loaded
-        self.__config = None
-        self._config_file = config_file 
+        self._config = None
         self.wrappers = {}
         self.refresh(config_file)
 
@@ -126,8 +125,7 @@ class Link(object):
                 wrapper_classes = self._get_all_wrappers(ext_mod)
                 self.wrappers.update(wrapper_classes)
 
-    @property
-    def _config(self):
+    def _reset_config(self):
         """
         Lazy load the config so that any errors happen then
         """
@@ -138,11 +136,8 @@ class Link(object):
                         point to your link configuration directory or create a
                         #.link/link.config file in your HOME directory""")
 
-        if not self.__config:
-            self.__config = load_json_file(self._config_file)
+        self._config = load_json_file(self._config_file)
 
-        return self.__config
-    
     def refresh(self, config_file=None):
         """
         sets the environment with a fresh config or namespace that is not
@@ -151,14 +146,12 @@ class Link(object):
 
         #if they don't pass in a config file just get the normal_one
         if config_file:
-            self.__config_file = config_file 
+            self._config_file = config_file 
 
-        self._config_file
         #by setting this to none you are clearing_config
-        self.__config = None
+        self._reset_config()
+
         # I don't think i want to support this feature anymore
-        # self._commander = self.__config.get('__cmds__')
-        # self._commander = self.__config.get('__scripts__')
         self.wrappers = {}
 
     def configure_msg(self, overrides={}, keep_existing=True, verbose=False):
@@ -208,7 +201,7 @@ class Link(object):
         try:
             return self.__getattribute__(name)
         except Exception as e:
-            return self.get_link(wrap_name=name, **self._config[name].copy())
+            return self.get_link(link_name=name, **self._config[name].copy())
 
     def config(self, config_lookup=None):
         """
@@ -239,7 +232,8 @@ class Link(object):
         Get a configured link object by it's name 
         """
         wrap_config = {}
-
+        
+        print "link name {} ".format(link_name)
         if link_name:
             wrap_config = self.config(link_name)
             # if its just a string, make a wrapper that is preloaded with

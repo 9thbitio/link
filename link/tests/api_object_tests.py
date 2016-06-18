@@ -1,4 +1,4 @@
-from link import APIObject, APIResponse
+from link._common import APIObject, APIResponse
 import json
 import unittest
 
@@ -23,6 +23,7 @@ class MockAPIObject(APIObject):
         Test that we are overriding the message correctly
         """
         return self.my_message()
+
 
 class TestAPIObject(unittest.TestCase):
 

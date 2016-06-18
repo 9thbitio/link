@@ -1,7 +1,9 @@
 import unittest
 import os
-from link import Link, Wrapper
-from link.utils import load_json_file
+
+from link import lnk
+from link.wrappers import Wrapper
+from link._utils import load_json_file
 from link.tests import *
 
 DIR = os.path.dirname(__file__)
@@ -11,14 +13,13 @@ BAD_CONFIG = 'bad_config.test_config'
 NO_CONFIG = 'no_config.test_config'
 
 #load in all the configs that we want
-lnk = Link.instance()
-config1 = load_tst_config(TEST_CONFIG)
-config1_path = tst_config_path(TEST_CONFIG)
-config2 = load_tst_config(TEST_CONFIG2)
-config2_path = tst_config_path(TEST_CONFIG2)
-bad_config_path = tst_config_path(BAD_CONFIG)
+CONFIG1 = load_tst_config(TEST_CONFIG)
+CONFIG1_PATH = tst_config_path(TEST_CONFIG)
+CONFIG2 = load_tst_config(TEST_CONFIG2)
+CONFIG2_PATH = tst_config_path(TEST_CONFIG2)
+BAD_CONFIG_PATH = tst_config_path(BAD_CONFIG)
 #this does not exist
-no_config_path = tst_config_path(NO_CONFIG)
+NO_CONFIG_PATH = tst_config_path(NO_CONFIG)
 
 FAKE_WRAPPER_PATH1 = tst_file_path('fake_wrappers')
 FAKE_WRAPPER_PATH2 = tst_file_path('fake_wrappers.fake_wrap2')
@@ -29,43 +30,36 @@ class TestLink(unittest.TestCase):
 
     def setUp(self):
         #reset the config every time to config1
-        lnk.fresh(config_file=config1_path)
+        lnk.refresh(config_file=CONFIG1_PATH)
 
     def test_config(self):
-        self.assertEquals(lnk.config(), config1)
-
-    def test_instance(self):
-        self.assertNotEquals(lnk, Link(config1_path))
-        #check to make sure this is a singleton
-        self.assertEquals(lnk,
-                          Link.instance())
+        self.assertEquals(lnk.config(), CONFIG1)
 
     def test_config_lookup(self):
         lookup = lnk.config('apis.test_api')
-        self.assertEquals(lookup, config1['apis']['test_api'])
+        self.assertEquals(lookup, CONFIG1['apis']['test_api'])
         self.assertRaises(KeyError, lnk.config, 'this.is.not.a.key')
 
-    def test_fresh(self):
+    def test_refresh(self):
         lookup_conf1 = lnk.config('apis.test_api')
         #now change what config we are pointing to
-        lnk.fresh(config_file = config2_path)
+        lnk.refresh(config_file = CONFIG2_PATH)
         lookup_conf2 = lnk.config('apis.test_api')
         self.assertNotEquals(lookup_conf1, lookup_conf2)
-        self.assertEquals(lookup_conf1, config1['apis']['test_api'])
-        self.assertEquals(lookup_conf2, config2['apis']['test_api'])
+        self.assertEquals(lookup_conf1, CONFIG1['apis']['test_api'])
+        self.assertEquals(lookup_conf2, CONFIG2['apis']['test_api'])
     
     def test_bad_config(self):
         #we want to make sure it won't bomb out on the fresh but 
         #throws exception when you actually do something where it calls the
         #config
-        lnk.fresh(config_file = bad_config_path)
+        lnk.refresh(config_file = BAD_CONFIG_PATH)
         self.assertRaises(ValueError, lnk.config)
 
     def test_no_config(self):
         #we want to make sure that it will load without a config but will throw
         #an appropriate error when you try to use the config
-        lnk.fresh(config_file = no_config_path)
-        self.assertRaises(Exception, lnk.config)
+        self.assertRaises(Exception, lnk.refresh, config_file = NO_CONFIG_PATH)
 
     def test_default_wrapper(self):
         wrap_name = 'apis.test_api'
@@ -88,7 +82,7 @@ class TestLink(unittest.TestCase):
         self.assertEquals(config['password'], lnk.config('apis.test_api.password'))
 
     def test_load_wrapper_directories(self):
-        lnk.fresh()
+        lnk.refresh()
         self.assertEquals(lnk.wrappers, {})
         lnk.load_wrapper_directories([FAKE_WRAPPER_PATH1])
         self.assertTrue(lnk.wrappers.has_key('FakeWrapper'))
@@ -97,7 +91,7 @@ class TestLink(unittest.TestCase):
         self.assertTrue(lnk.wrappers.has_key('FakeWrapper2'))
 
     def test_load_wrapper_packages(self):
-        lnk.fresh()
+        lnk.refresh()
         self.assertEquals(lnk.wrappers, {})
         lnk.load_wrapper_packages([FAKE_WRAPPER_PACKAGE1])
         self.assertTrue(lnk.wrappers.has_key('FakeWrapper'))
@@ -109,7 +103,7 @@ class TestLazyFunctions(unittest.TestCase):
 
     def setUp(self):
         #reset the config every time to config1
-        lnk.fresh(config_file=config1_path)
+        lnk.refresh(config_file=CONFIG1_PATH)
 
     def test_function_lookup(self):
         func = lnk.lazy_functions.test_function
@@ -135,18 +129,9 @@ class MockNonCallableWrapper(Wrapper):
 class TestWrapper(unittest.TestCase):
 
     def setUp(self):
-        lnk.fresh(config_file=config1_path)
+        lnk.refresh(config_file=CONFIG1_PATH)
         self.wrapper = lnk.test_wrapper
     
-    def test_call(self):
-        ran = MockCallableWrapper()('echo')
-        self.assertTrue(ran!=None)
-
-    def test_call_default(self):
-        ran = MockCallableWrapper()()
-        self.assertTrue(ran!=None)
-        self.assertRaises(NotImplementedError, MockNonCallableWrapper())
-
 
 if __name__ == '__main__':
     import nose
