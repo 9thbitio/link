@@ -431,7 +431,8 @@ class MysqlDB(DBConnectionWrapper):
 class PostgresDB(DBConnectionWrapper):
 
     def __init__(self, wrap_name=None, user=None, password=None,
-                 host=None, database=None, port=defaults.POSTGRES_DEFAULT_PORT):
+                 host=None, database=None, port=defaults.POSTGRES_DEFAULT_PORT,
+                 readonly=False, autocommit=False):
         """
         A connection for a Postgres Database.  Requires that
         psycopg2 is installed
@@ -446,6 +447,8 @@ class PostgresDB(DBConnectionWrapper):
         self.host = host
         self.database = database
         self.port = port
+        self.readonly = readonly
+        self.autocommit = autocommit
         super(PostgresDB, self).__init__(wrap_name=wrap_name)
 
     def create_connection(self):
@@ -466,6 +469,14 @@ class PostgresDB(DBConnectionWrapper):
 
         conn = psycopg2.connect(host=self.host, port=self.port,  user=self.user,
                                     password=self.password, database=self.database )
+
+        # If this is a read-only connection, then force autocommit as well
+        if self.readonly:
+            conn.set_session(autocommit=True, readonly=True)
+        # Else, set the autocommit
+        else:
+            conn.set_session(autocommit=self.autocommit)
+
         return conn
 
     def use(self, database):
