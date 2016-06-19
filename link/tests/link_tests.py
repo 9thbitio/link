@@ -53,8 +53,7 @@ class TestLink(unittest.TestCase):
         #we want to make sure it won't bomb out on the fresh but 
         #throws exception when you actually do something where it calls the
         #config
-        lnk.refresh(config_file = BAD_CONFIG_PATH)
-        self.assertRaises(ValueError, lnk.config)
+        self.assertRaises(ValueError, lnk.refresh, config_file = BAD_CONFIG_PATH)
 
     def test_no_config(self):
         #we want to make sure that it will load without a config but will throw
@@ -90,14 +89,6 @@ class TestLink(unittest.TestCase):
         lnk.load_wrapper_directories([FAKE_WRAPPER_PATH2])
         self.assertTrue(lnk.wrappers.has_key('FakeWrapper2'))
 
-    def test_load_wrapper_packages(self):
-        lnk.refresh()
-        self.assertEquals(lnk.wrappers, {})
-        lnk.load_wrapper_packages([FAKE_WRAPPER_PACKAGE1])
-        self.assertTrue(lnk.wrappers.has_key('FakeWrapper'))
-        self.assertFalse(lnk.wrappers.has_key('FakeWrapper2'))
-        lnk.load_wrapper_packages([FAKE_WRAPPER_PACKAGE2])
-        self.assertTrue(lnk.wrappers.has_key('FakeWrapper2'))
 
 class TestLazyFunctions(unittest.TestCase):
 
@@ -105,12 +96,6 @@ class TestLazyFunctions(unittest.TestCase):
         #reset the config every time to config1
         lnk.refresh(config_file=CONFIG1_PATH)
 
-    def test_function_lookup(self):
-        func = lnk.lazy_functions.test_function
-        self.assertTrue(func.commander.has_command("__default__"))
-        self.assertTrue(func.commander.has_command("function"))
-        self.assertFalse(func.commander.has_command("aeuoaeaosuoesth"))
-    
 class MockCallableWrapper(Wrapper):
     
     def __init__(self):

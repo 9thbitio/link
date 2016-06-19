@@ -38,6 +38,7 @@ Sample Code::
 
 import inspect
 import json 
+import sys
 
 from . import __GET_LINK__
 from ._utils import load_json_file, deprecated
@@ -233,7 +234,6 @@ class Link(object):
         """
         wrap_config = {}
         
-        print "link name {} ".format(link_name)
         if link_name:
             wrap_config = self.config(link_name)
             # if its just a string, make a wrapper that is preloaded with
