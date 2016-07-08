@@ -141,6 +141,13 @@ class APIRequestWrapper(Wrapper):
         return self.request('put', url_params = url_params, data = data,
                             **kwargs)
 
+    def patch(self, url_params='', data='', **kwargs):
+        """
+        Make a patch call
+        """
+        return self.request('patch', url_params = url_params, data = data,
+                            **kwargs)
+
     def post(self, url_params='', data='', **kwargs):
         """
         Make a post call
