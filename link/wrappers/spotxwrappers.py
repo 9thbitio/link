@@ -71,6 +71,7 @@ class SpotxAPI(APIRequestWrapper):
         #send a post with no auth. prevents an infinite loop
         refresh_response = self.post('/token', data = refresh_json)
         
+        import pdb; pdb.set_trace()
         if not refresh_response.ok or not refresh_response.json.get('value'):
             raise Exception("Issue Refreshing")
        
