@@ -1,11 +1,11 @@
-from links.wrappers import APIRequestWrapper, APIResponseWrapper
+from . import APIRequestWrapper, APIResponseWrapper
 from requests.auth import AuthBase
 import json
 import requests
 
 from link import lnk
 
-class AolAPIResponse(APIRequestWrapper):
+class AolAPIResponse(APIResponseWrapper):
     pass
 
 
@@ -13,13 +13,13 @@ class Aol(APIRequestWrapper):
 
     """Use AOL's API to run an existing report. Return a pandas dataframe. """
 
-    def __init__(self, user=None, password=None, report_id=None, wrap_name=None, 
+    def __init__(self, user=None, password=None, report_id=None, wrap_name=None,
             base_url=None, org_id=None):
-        self.user = user
-        self.password = password
         self.report_id = report_id
         self.org_id = org_id
-        super(Aol, self).__init__(wrap_name = wrap_name
+        super(Aol, self).__init__(wrap_name = wrap_name,
+                                  user=user, 
+                                  password=password,
                                   base_url = base_url,
                                   response_wrapper = AolAPIResponse)
 
@@ -28,10 +28,14 @@ class Aol(APIRequestWrapper):
         """ Log into AOL API, grab org_id """
 
         self._wrapped = requests.session()
-            
-        resp = self.post('/sessions/login?un={un}&pw={pw}'.format(un=self.user,
-            pw=self.password)
+        
+        payload = {'un':self.user, 'pw':self.password, 's':'1'}
 
+        resp = self.post('/sessions/login?', data =
+                         payload,
+                         headers={'content-type':
+                                  'application/x-www-form-urlencoded'})
+        
         if not resp.ok:
             raise Exception("Issue connecting to API")
             
