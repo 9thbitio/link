@@ -2,19 +2,33 @@ import argparse
 import json
 from link import lnk
 
+msg = lnk.msg
+spotx = lnk.apis.spotx
 
 def get_args():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--campaign_id', help='give spotx campaign id', type=str, required=True)
-    parser.add_argument('--rpm', help='rpm rate calculated to filter channels', type=int,
+    parser.add_argument('--campaign_id', help='spotx campaign id', type=str, required=True)
+    parser.add_argument('--cpm', help='cpm rate to filter channels', type=int,
             required=True)
     return parser.parse_args()
 
 
-def get_channel_ids(campaign_id, rpm):
+def check_campaign(campaign_id):
 
-    spotx = lnk.apis.spotx
+    """Checking if campaign is on do not target list"""
+    campaign_dnt = ['1b2a7.a3f6e.cb48', '1b2a7.2c271.5830', '1b2a7.9f200.f122']
+    if campaign_id in campaign_dnt:
+        msg.info('No targeting is allowed for this campaign')
+        return None
+    
+    return campaign_id
+
+
+def get_channels(campaign_id):
+
+    """Get channels from SpotX API to filter"""
+    msg.info("Getting Channel IDs")
 
     length = 500
     skip = 0
@@ -23,30 +37,31 @@ def get_channel_ids(campaign_id, rpm):
         page = spotx.get("/Publisher(111271)/Channel?$skip={}&$top=500".format(skip)).json['value']
         channels.extend(page)
         skip += 500
-        print "Checking next page"
+        msg.info("Checking next page")
         length = len(page)
 
-    # find rpm or cpm once spotx fixes their defect
+    # find cpm or cpm once spotx fixes their defect
     # campaign = spotx.get("/Publisher(111271)/Campaign({})/".format(campaign_id)).json
-    # rpm = campaign['creative']['fixed_cpm']
+    # cpm = campaign['creative']['fixed_cpm']
 
-    # remove DNT channels
+    return channels
+
+
+def filter_channels(channels, cpm):
+
+    """Filter through channels by naming conventions and rate"""
+    msg.info("Filtering channels")
     channels = [channel for channel in channels if channel['name'][-3:] != 'DNT']
 
-    # filter channels by RPM or VRB naming convention
-    return [channel['id'] for channel in channels if (channel['price_floor']
-        <= rpm) or (channel['name'][-3:] == 'VRB')]
+    channel_ids = [channel['id'] for channel in channels if (channel['price_floor']
+        <= cpm) or (channel['name'][-3:] == 'VRB')]
+
+    return channel_ids
 
 
 def targeting(campaign_id, channel_ids):
 
-    campaign_dnt = ['1b2a7.a3f6e.cb48', '1b2a7.2c271.5830', '1b2a7.9f200.f122']
-    if campaign_id in campaign_dnt:
-        print 'No targeting is allowed for this campaign'
-        return None
-
-    spotx = lnk.apis.spotx
-
+    """Target channels to campaign"""
     updating_data = {
         'targeting_options' : [
             {
@@ -57,24 +72,20 @@ def targeting(campaign_id, channel_ids):
         ]
     }
 
-    return spotx.patch("/Publisher(111271)/Campaign({})/".format(campaign_id),
+    spotx.patch("/Publisher(111271)/Campaign({})/".format(campaign_id),
             data=json.dumps(updating_data))
 
 
 if __name__ == '__main__':
-    # argparse for demand_tag_id and rpm
+    # argparse for demand_tag_id and cpm
     _args = get_args()
     campaign_id = _args.campaign_id
-    rpm = _args.rpm
+    cpm = _args.cpm
 
-    # open session with api
-    # spotx = connect_api
-
-    # get channel_ids filtered by rpm
-    channel_ids = get_channel_ids(campaign_id, rpm)
-
-    # add channels to campaign targeting
-    # campaign = targeting(campaign_id, channel_ids)
-    # campaign
+    # get channel_ids filtered by cpm
+    campaign_id = check_campaign(campaign_id)
+    channels = get_channels(campaign_id)
+    channel_ids = filter_channels(channels, cpm)
+    targeting(campaign_id, channel_ids)
 
 
