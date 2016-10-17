@@ -13,3 +13,4 @@ from elasticsearchwrappers import *
 from liverailwrappers import *
 from spotxwrappers import *
 from aolwrappers import *
+from yahoowrapper import *
