@@ -1,4 +1,4 @@
-from apiwrappers import APIRequestWrapper, APIResponseWrapper
+from .apiwrappers import APIRequestWrapper, APIResponseWrapper
 from requests.auth import AuthBase
 from xml.etree import cElementTree as ET
 import base64
@@ -159,7 +159,7 @@ class AlexaAPI(APIRequestWrapper):
         else:
             urls = map(urllib.quote, urls)
             if len(urls) > 5:
-                raise RuntimeError, "Maximum number of batch URLs is 5."
+                raise RuntimeError("Maximum number of batch URLs is 5.")
 
             params.update({ "UrlInfo.Shared.ResponseGroup": response_groups, })    
             

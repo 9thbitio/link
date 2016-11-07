@@ -4,6 +4,8 @@ from link import Link, Wrapper
 from link.utils import load_json_file
 from link.tests import *
 
+from link.exceptions import LNKAttributeException, LNKConfigException
+
 DIR = os.path.dirname(__file__)
 TEST_CONFIG = 'test_link.test_config' 
 TEST_CONFIG2 = 'test_link2.test_config'
@@ -43,7 +45,7 @@ class TestLink(unittest.TestCase):
     def test_config_lookup(self):
         lookup = lnk.config('apis.test_api')
         self.assertEquals(lookup, config1['apis']['test_api'])
-        self.assertRaises(KeyError, lnk.config, 'this.is.not.a.key')
+        self.assertRaises(LNKAttributeException, lnk.config, 'this.is.not.a.key')
 
     def test_fresh(self):
         lookup_conf1 = lnk.config('apis.test_api')
@@ -59,13 +61,13 @@ class TestLink(unittest.TestCase):
         #throws exception when you actually do something where it calls the
         #config
         lnk.fresh(config_file = bad_config_path)
-        self.assertRaises(ValueError, lnk.config)
+        self.assertRaises(LNKConfigException, lnk.config)
 
     def test_no_config(self):
         #we want to make sure that it will load without a config but will throw
         #an appropriate error when you try to use the config
         lnk.fresh(config_file = no_config_path)
-        self.assertRaises(Exception, lnk.config)
+        self.assertRaises(LNKConfigException, lnk.config)
 
     def test_default_wrapper(self):
         wrap_name = 'apis.test_api'
@@ -76,7 +78,7 @@ class TestLink(unittest.TestCase):
         self.assertEquals(config['password'], lnk.config('apis.test_api.password'))
     
     def test_wrapper_not_configured(self):
-        self.assertRaises(Exception, lnk, 'this.is.not.a.key')
+        self.assertRaises(LNKAttributeException, lnk, 'this.is.not.a.key')
 
     def test_wrapper_kwargs_override(self):
         wrap_name = 'apis.test_api'
@@ -91,19 +93,19 @@ class TestLink(unittest.TestCase):
         lnk.fresh()
         self.assertEquals(lnk.wrappers, {})
         lnk.load_wrapper_directories([FAKE_WRAPPER_PATH1])
-        self.assertTrue(lnk.wrappers.has_key('FakeWrapper'))
-        self.assertFalse(lnk.wrappers.has_key('FakeWrapper2'))
+        self.assertTrue(lnk.wrappers.get('FakeWrapper'))
+        self.assertFalse(lnk.wrappers.get('FakeWrapper2'))
         lnk.load_wrapper_directories([FAKE_WRAPPER_PATH2])
-        self.assertTrue(lnk.wrappers.has_key('FakeWrapper2'))
+        self.assertTrue(lnk.wrappers.get('FakeWrapper2'))
 
     def test_load_wrapper_packages(self):
         lnk.fresh()
         self.assertEquals(lnk.wrappers, {})
         lnk.load_wrapper_packages([FAKE_WRAPPER_PACKAGE1])
-        self.assertTrue(lnk.wrappers.has_key('FakeWrapper'))
-        self.assertFalse(lnk.wrappers.has_key('FakeWrapper2'))
+        self.assertTrue(lnk.wrappers.get('FakeWrapper'))
+        self.assertFalse(lnk.wrappers.get('FakeWrapper2'))
         lnk.load_wrapper_packages([FAKE_WRAPPER_PACKAGE2])
-        self.assertTrue(lnk.wrappers.has_key('FakeWrapper2'))
+        self.assertTrue(lnk.wrappers.get('FakeWrapper2'))
 
 class TestLazyFunctions(unittest.TestCase):
 

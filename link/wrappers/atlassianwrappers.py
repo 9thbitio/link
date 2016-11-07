@@ -1,5 +1,5 @@
 
-from apiwrappers import APIRequestWrapper
+from .apiwrappers import APIRequestWrapper
 from requests.auth import AuthBase
 
 class CrucbileAuth(AuthBase):

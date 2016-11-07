@@ -13,22 +13,19 @@ DOWNLOAD_URL = ''
 CLASSIFIERS = ['Development Status :: 4 - Beta',     
                'Programming Language :: Python',
                'Programming Language :: Python :: 2'
+               'Programming Language :: Python :: 3'
               ]
 EMAIL = ''
 SETUP_ARGS = {}
 DATA_FILES = [('link/configs', ['link/configs/link.config'])]
-REQUIRES = ['requests>=2.0.0', 'requests_oauthlib>=0.4.0' ]
+REQUIRES = ['requests>=2.0.0', 'requests_oauthlib>=0.4.0', 'pandas', 'xmltodict' ]
 
 try:
     import numpy
     import pandas
     import xmltodict
 except:
-    print "We highly suggest you install numpy and Pandas for some functionality" 
-    print "easy_install numpy"
-    print "easy_install pandas"
-    print "xmltodict is used in Alexa's json wrapper"
-    print "pip install xmltodict"  
+    print("We highly suggest you install numpy and Pandas for some functionality" )
   
 # write out the version file so we can keep track on what version the built
 # package is

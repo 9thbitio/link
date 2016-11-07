@@ -1,4 +1,13 @@
 import os
+
+import six
+
+from itertools import chain, repeat
+
+if six.PY3:
+    izip = zip
+else:
+    from itertools import izip
 # -*- coding: utf-8 -*-
 
 """
@@ -54,7 +63,6 @@ def list_to_dataframe(rows, names):
     return DataFrame(columns, columns=names)
 
 
-from itertools import izip, chain, repeat
 
 def array_pagenate(n, iterable, padvalue=None):
     """

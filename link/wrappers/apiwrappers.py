@@ -28,7 +28,7 @@ class APIResponseWrapper(Wrapper):
         """
         if not self._json:
             try:
-                self._json = json.loads(self.content)
+                self._json = json.loads(self.content.decode("utf-8"))
             except:
                 raise ValueError("Response is not valid json %s " % self.content)
         return self._json

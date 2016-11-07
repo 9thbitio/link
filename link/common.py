@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 import json
 
 #class Node(object):
@@ -246,7 +247,7 @@ class APIObject(object):
         self._message = message
 
 
-from utils import array_pagenate
+from .utils import array_pagenate
 import types
 
 class APIResponse(APIObject):
@@ -306,7 +307,7 @@ class APIResponse(APIObject):
         #next one in the list. Remove the Nones.  There is probably a way to
         #make it so it doesn't have to pad
         try:
-            next = self._pages.next() 
+            next = self.next_page(self._pages) 
         except StopIteration as e:
             #if we are done then set the message to nothing
             self.set_message([])

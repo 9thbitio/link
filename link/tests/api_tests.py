@@ -21,7 +21,6 @@ class TestResponseWrapper(unittest.TestCase):
 
     def test_json(self):
         self.response.content = '{"this":"is", "json":true}'
-        print self.response.content
         resp = APIResponseWrapper(response = self.response)
         self.assertEquals(json.loads(self.response.content), resp.json)
 

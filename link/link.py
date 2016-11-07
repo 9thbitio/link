@@ -35,21 +35,31 @@ Sample Code::
 :license: Apache2, see LICENSE for more details.
 
 """
+from __future__ import print_function
+from __future__ import absolute_import
 
 import os
 import sys
 import inspect
 import json
-from utils import load_json_file
+import six
+
+if six.PY3:
+    unicode = str
+    str = bytes
+
+
 from subprocess import Popen
-from common import Cacheable
+
+from .utils import load_json_file
+from .common import Cacheable
+from .exceptions import LNKConfigException, LNKAttributeException
 
 # To set up logging manager
-from _logging_setup import LogHandler
+from ._logging_setup import LogHandler
 
 # this gets the current directory of link
 lnk_dir = os.path.split(os.path.abspath(__file__))[0]
-
 
 class Callable(object):
     """
@@ -115,7 +125,7 @@ class Commander(object):
         """
         Returns true if this commander has a command by this name
         """
-        return self.commands.has_key(name)
+        return name in self.commands
 
     def run_command(self, name="__default__", base_dir='', *kargs, **kwargs):
         """
@@ -140,7 +150,7 @@ class Commander(object):
                 p.wait()
                 return p
 
-        raise(Exception("No such command %s " % name))
+        raise Exception
 
     def command(self, name=None):
         """
@@ -161,6 +171,7 @@ class Link(object):
     """
     __link_instance = None
     __msg = None
+    __name__ = "lnk"
 
     LNK_USER_DIR = '%s/.link' % os.getenv('HOME')
     LNK_DIR = os.getenv('LNK_DIR') or LNK_USER_DIR
@@ -235,10 +246,10 @@ class Link(object):
         # lets create the user config for them
         if "IPython" in sys.modules:
             if not os.path.exists(cls.LNK_DIR):
-                print "Creating user config dir %s " % cls.LNK_DIR
+                print("Creating user config dir %s " % cls.LNK_DIR)
                 os.makedirs(cls.LNK_DIR)
 
-            print "Creating default user config "
+            print("Creating default user config ")
             new_config = open(cls.LNK_CONFIG, 'w')
             new_config.write(json.dumps(cls.DEFAULT_CONFIG))
             new_config.close()
@@ -314,7 +325,10 @@ class Link(object):
                         #.link/link.config file in your HOME directory""")
 
         if not self.__config:
-            self.__config = load_json_file(self.__config_file)
+            try: 
+                self.__config = load_json_file(self.__config_file)
+            except:
+                raise LNKConfigException("Error parsing config")
 
         return self.__config
 
@@ -381,7 +395,7 @@ class Link(object):
         try:
             return self.__getattribute__(name)
         except Exception as e:
-            return self(wrap_name=name, **self._config[name].copy())
+            return self(wrap_name=name, **self.config(name).copy())
 
     def config(self, config_lookup=None):
         """
@@ -395,7 +409,7 @@ class Link(object):
                 for value in config_lookup.split('.'):
                     ret = ret[value]
             except KeyError:
-                raise KeyError('No such configured object %s' % config_lookup)
+                raise LNKAttributeException('No such configured object %s' % config_lookup)
             return ret
 
         return ret
@@ -452,11 +466,11 @@ class Link(object):
             cp_dir = self.plugins_directory()
 
         import shutil
-        print "installing %s into directory %s " % (file, cp_dir)
+        print("installing %s into directory %s " % (file, cp_dir))
         try:
             shutil.copy(file, cp_dir)
         except:
-            print "error moving files"
+            print("error moving files")
 
 
 lnk = Link.instance()

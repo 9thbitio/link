@@ -1,7 +1,14 @@
 from link import Wrapper
 from link.utils import list_to_dataframe
 from contextlib import closing
-import defaults
+from . import defaults 
+
+import six
+
+if six.PY3:
+    unicode = str
+    str = bytes
+
 
 MYSQL_CONNECTION_ERRORS = (2006, 2013)
 
@@ -374,7 +381,7 @@ class MysqlDB(DBConnectionWrapper):
         try:
             cursor = self._wrapped.cursor()
             return self.CURSOR_WRAPPER(cursor, query, args=args)()
-        except MySQLdb.OperationalError, e:
+        except MySQLdb.OperationalError as e:
             if e[0] in MYSQL_CONNECTION_ERRORS:
                 self._wrapped.close()
                 self._wrapped = self.create_connection()

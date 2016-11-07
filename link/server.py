@@ -1,6 +1,7 @@
 #!/usr/bin/python
+from __future__ import absolute_import
 from flask import Flask, request, json, Response
-from link import lnk, Wrapper
+from .link import lnk, Wrapper
 from subprocess import Popen, signal
 
 app = Flask(__name__)
@@ -28,7 +29,7 @@ class LnkServer(Wrapper):
         port = port or self.port
 
         #TODO: need to have a test that checks for lnk_dir
-        from link import lnk_dir
+        from .link import lnk_dir
         
         if debug:
             debug = 'debug'
