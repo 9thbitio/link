@@ -14,7 +14,7 @@ MYSQL_CONNECTION_ERRORS = (2006, 2013)
 
 class DBCursorWrapper(Wrapper):
     """
-    Wraps a select and makes it easier to tranform the data
+    Wraps a select and makes it easier to transform the data
     """
     def __init__(self, cursor, query = None, wrap_name = None, args=None):
         self.cursor = cursor
@@ -501,7 +501,7 @@ class PostgresDB(DBConnectionWrapper):
 
     def __call__(self, query = None, outfile= None):
         """
-        Create a shell connection to this mysql instance
+        Create a shell connection to this postgresql instance
         """
         cmd = 'psql -U %s -W%s -h %s %s %s' % (self.user, self.password,
                                                      self.host, self.port, self.database)
