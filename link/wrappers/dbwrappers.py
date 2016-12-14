@@ -1,7 +1,7 @@
 from link import Wrapper
 from link.utils import list_to_dataframe
 from contextlib import closing
-from . import defaults 
+from . import defaults
 
 import six
 
@@ -506,4 +506,49 @@ class PostgresDB(DBConnectionWrapper):
         cmd = 'psql -U %s -W%s -h %s %s %s' % (self.user, self.password,
                                                      self.host, self.port, self.database)
         self.run_command(cmd)
+
+
+class SnowflakeDB(DBConnectionWrapper):
+
+    def __init__(self, wrap_name=None, user=None, password=None, account_name=None,
+            database=None, schema=None, warehouse=None):
+        """
+        A connection to a Snowflake account. Requires snowflake-connector-python.
+
+        :param user: Username
+        :param password: Password
+        :param account_name: Snowflake account name
+        :param warehouse: Warehouse to use (Optional). If not passed in must be set
+            explicitly from connection.
+        :param database: Database to use (Optional). Requires setting a warehouse.
+        :param schema: Schema to use (Optional). Requires setting a database.
+        """
+        self.user = user
+        self.password = password
+        self.account_name = account_name
+        self.database = database
+        self.schema = schema
+        self.warehouse = warehouse
+        super(SnowflakeDB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        import snowflake.connector as sf
+
+        conn = sf.connect(
+                user=self.user,
+                password=self.password,
+                account=self.account_name
+                )
+
+        if self.warehouse is not None:
+            conn.cursor().execute("USE warehouse {};".format(self.warehouse))
+
+            if self.database is not None:
+                db_str = "USE {}".format(self.database)
+                if self.schema is not None:
+                    db_str += ".{}".format(self.schema)
+
+                conn.cursor().execute(db_str)
+
+        return conn
 
