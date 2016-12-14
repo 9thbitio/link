@@ -42,7 +42,7 @@ if six.PY3:
     str = bytes
 
 #import all of this version information
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 __author__ = 'David Himrod'
 __license__ = 'Apache 2.0'
 __copyright__ = 'Copyright 2013 David Himrod'
