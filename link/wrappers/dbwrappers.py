@@ -537,18 +537,18 @@ class SnowflakeDB(DBConnectionWrapper):
         conn = sf.connect(
                 user=self.user,
                 password=self.password,
-                account=self.account
+                account=self.account_name
                 )
 
         if self.warehouse is not None:
-            db_str = "USE warehouse {};".format(self.warehouse)
+            conn.cursor().execute("USE warehouse {};".format(self.warehouse))
 
             if self.database is not None:
-                db_str += "USE {}".format(self.database)
+                db_str = "USE {}".format(self.database)
                 if self.schema is not None:
                     db_str += ".{}".format(self.schema)
 
-            conn.cursor().execute(db_str)
+                conn.cursor().execute(db_str)
 
         return conn
 
