@@ -1,9 +1,10 @@
+from contextlib import closing, contextmanager
+import six
+
 from link import Wrapper
 from link.utils import list_to_dataframe
-from contextlib import closing
 from . import defaults
 
-import six
 
 if six.PY3:
     unicode = str
@@ -11,6 +12,7 @@ if six.PY3:
 
 
 MYSQL_CONNECTION_ERRORS = (2006, 2013)
+
 
 class DBCursorWrapper(Wrapper):
     """
@@ -115,6 +117,28 @@ class DBConnectionWrapper(Wrapper):
         """
         cursor = self._wrapped.cursor()
         return self.CURSOR_WRAPPER(cursor, query, args=args)()
+
+    @contextmanager
+    def transaction(self):
+        """
+        Execute statement(s) within a transaction (BEGIN; .... ; COMMIT/ROLLBACK;). Rolls
+        back on any raised Exception.
+
+        Note that this will return a cursor for use during the transaction block.
+        However, the original connection can still be used to execute statements which
+        will all execute under the same transaction context. Note that this will NOT close
+        the connection.
+
+        Suggested usage:
+
+        conn = lnk.dbs.my_connection
+        with conn.transaction() as cursor:
+            cursor.execute("insert into foo values (...)")
+            print("Inserted {} rows".format(cursor.rowcount))
+            cursor.execute(" delete from foo where ...")
+            print("Deleted {} rows".format(cursor.rowcount))
+        """
+        raise NotImplementedError()
 
     #TODO: Add in the ability to pass in params and also index
     def select_dataframe(self, query, args=()):
@@ -507,6 +531,31 @@ class PostgresDB(DBConnectionWrapper):
                                                      self.host, self.port, self.database)
         self.run_command(cmd)
 
+    @contextmanager
+    def transaction(self):
+        """
+        Execute statement(s) within a transaction (BEGIN; .... ; COMMIT/ROLLBACK;). Rolls
+        back on any raised Exception.
+
+        Note that this will return a psycopg2 cursor for use during the transaction block,
+        so that psycopg2 functionality such as copy_from() is still supported.
+        However, the original connection can still be used to execute statements which
+        will all execute under the same transaction context. Note that this will NOT close
+        the connection.
+
+        Suggested usage:
+
+        conn = lnk.dbs.my_connection
+        with conn.transaction() as cursor:
+            cursor.execute("insert into foo values (...)")
+            print("Inserted {} rows".format(cursor.rowcount))
+            cursor.execute(" delete from foo where ...")
+            print("Deleted {} rows".format(cursor.rowcount))
+        """
+        with self._wrapped as og_conn:
+            with og_conn.cursor() as cursor:
+                yield cursor
+
 
 class SnowflakeDB(DBConnectionWrapper):
 
@@ -552,3 +601,17 @@ class SnowflakeDB(DBConnectionWrapper):
 
         return conn
 
+    @contextmanager
+    def transaction(self):
+        """
+        Executes a block within a transaction (BEGIN; .... ; COMMIT/ROLLBACK;). Rolls back
+        on any raised Exception. Note that this will NOT close the connection.
+        """
+        try:
+            cursor = self.cursor()
+            cursor.execute("BEGIN")
+            yield cursor
+            self.commit()
+        except:
+            self.rollback()
+            raise
