@@ -13,7 +13,8 @@ class YahooAuth(AuthBase):
     
     def __call__(self, req):
 
-        req.url = "https://api-v3.admanagerplus.yahoo.com/v1/report/run?format=csv"
+        # req.url = "https://api-v3.admanagerplus.yahoo.com/v1/report/run?format=csv"
+        req.url = "http://api-sched-v3.admanagerplus.yahoo.com/yamplus_api/extreport/"
 
         req.headers['Content-Type'] = 'application/json'
         req.headers['X-Auth-Method'] = 'OAUTH'
