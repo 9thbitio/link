@@ -13,9 +13,6 @@ class YahooAuth(AuthBase):
     
     def __call__(self, req):
 
-        # req.url = "https://api-v3.admanagerplus.yahoo.com/v1/report/run?format=csv"
-        req.url = "http://api-sched-v3.admanagerplus.yahoo.com/yamplus_api/extreport/"
-
         req.headers['Content-Type'] = 'application/json'
         req.headers['X-Auth-Method'] = 'OAUTH'
         req.headers['X-Auth-Token'] = self.token
@@ -55,21 +52,19 @@ class YahooAPI(APIRequestWrapper):
                    'Content-Type': 'application/x-www-form-urlencoded'
                   }
 
-        token_url = 'https://api.login.yahoo.com/oauth2/get_token'
+        auth_url = 'https://api.login.yahoo.com/oauth2/get_token'
 
         self._wrapped = requests.session()
 
-        refresh_response = self.post("/get_token", headers=headers, data=body)
+        refresh_response = self._wrapped.post(auth_url + "/get_token", headers=headers, data=body)
 
         if not refresh_response.ok:
-            import pdb; pdb.set_trace()
-            raise Exception("Issue Refreshing")
+            raise Exception("Issue Refreshing: {}".format(refresh_response.content))
 
         resp = json.loads(refresh_response.text)
 
         if not resp['access_token']:
-            import pdb; pdb.set_trace()
-            raise Exception("Issue Refreshing")
+            raise Exception("Issue Refreshing (No access token): {}".format(refresh_response.content))
 
         self.access_token = resp['access_token']
 
