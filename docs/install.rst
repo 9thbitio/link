@@ -31,6 +31,7 @@ installed.  Here is a list of packages that may be used.::
     happybase ==> HbaseDB
     pymongo ==> MongoDB
     pyscopg ==> PostgresDB
+    pyhive ==> PrestoDB
 
 You should be able to pip or easy_install any of these packages very easily
 
