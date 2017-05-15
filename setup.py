@@ -18,7 +18,7 @@ CLASSIFIERS = ['Development Status :: 4 - Beta',
 EMAIL = ''
 SETUP_ARGS = {}
 DATA_FILES = [('link/configs', ['link/configs/link.config'])]
-REQUIRES = ['requests>=2.0.0', 'requests_oauthlib>=0.4.0', 'pandas', 'xmltodict' ]
+REQUIRES = ['requests>=2.0.0', 'requests_oauthlib>=0.4.0', 'pandas>0.16.0', 'xmltodict' ]
 
 try:
     import numpy
