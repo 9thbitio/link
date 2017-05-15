@@ -1,6 +1,6 @@
 import unittest
 import os
-from link.wrappers import DBConnectionWrapper, SqliteDBConnectionWrapper
+from link.wrappers import DBConnectionWrapper, SqliteDBConnectionWrapper, DBCursorWrapper
 from mock import Mock, MagicMock
 from link.tests import *
 
@@ -13,15 +13,16 @@ class TestDBConnectionWrapper(unittest.TestCase):
         #create a fake connection that is a mock as well
         self.cw._wrapped = Mock()
         self.cw.execute = MagicMock()
-        self.cw.execute.return_value = MagicMock()
+
+        self.cw.execute.return_value = DBCursorWrapper(MagicMock())
         self.cw.execute.return_value.fetchall = MagicMock()
         self.cw.description = MagicMock()
     
     def test_select_dataframe(self):
         return_val = [(1,2), (3,4)]
         headers = [['Col1'], ['col2']]
-        self.cw.execute.return_value.fetchall.return_value = return_val
-        self.cw.execute.return_value.description = headers
+        self.cw.execute.return_value._wrapped.fetchall.return_value = return_val
+        self.cw.execute.return_value._wrapped.description = headers
         query = 'my select statement'
         results = self.cw.select_dataframe(query)
         #check to see that the headers match but all lower case

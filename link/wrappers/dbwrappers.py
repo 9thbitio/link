@@ -151,7 +151,7 @@ class DBConnectionWrapper(Wrapper):
         except:
             raise Exception("pandas required to select dataframe. Please install"  +
                             "sudo easy_install pandas")
-
+        
         cursor = self.execute(query, args = args)
         return cursor.as_dataframe()
 

@@ -80,7 +80,6 @@ class Callable(object):
         Right now it only supports string commands for the shell
         """
         cmd = command or self.command
-        # import pdb; pdb.set_trace()
 
         if cmd:
             p = Popen(cmd, shell=True)
