@@ -15,3 +15,4 @@ from .spotxwrappers import *
 from .aolwrappers import *
 from .yahoowrapper import *
 from .prestowrapper import *
+from .salesforcewrappers import *
