@@ -56,7 +56,7 @@ class YahooAPI(APIRequestWrapper):
 
         self._wrapped = requests.session()
 
-        refresh_response = self._wrapped.post(auth_url + "/get_token", headers=headers, data=body)
+        refresh_response = self._wrapped.post(auth_url, headers=headers, data=body)
 
         if not refresh_response.ok:
             raise Exception("Issue Refreshing: {}".format(refresh_response.content))
