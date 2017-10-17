@@ -3,4 +3,3 @@ pandas
 xmltodict
 nose
 cassandra-driver
-
