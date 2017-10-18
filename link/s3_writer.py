@@ -10,6 +10,7 @@ http://boto3.readthedocs.io/en/latest/guide/configuration.html
 from cStringIO import InputType, OutputType, StringIO as cString
 from StringIO import StringIO
 from gzip import GzipFile
+from io import SEEK_SET
 
 from pandas import DataFrame, Series
 
@@ -39,7 +40,9 @@ class S3Writer(object):
             gzip_compression_level=6):
         # easy, it's already in a stringio ready to go
         if any([isinstance(data, c) for c in (InputType, OutputType, StringIO)]):
-            data.reset()
+            # make sure we reset to beginning, just in case, in preparation of read()
+            # must be compatible with StringIO and cStringIO, so can't use reset()
+            data.seek(SEEK_SET)
             return data
         
         data_io = cString()
