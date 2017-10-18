@@ -54,6 +54,7 @@ from subprocess import Popen
 from .utils import load_json_file
 from .common import Cacheable
 from .exceptions import LNKConfigException, LNKAttributeException
+from .s3_writer import S3Writer
 
 # To set up logging manager
 from ._logging_setup import LogHandler
@@ -470,6 +471,31 @@ class Link(object):
             shutil.copy(file, cp_dir)
         except:
             print("error moving files")
+
+    @classmethod
+    def upload_to_s3(cls, data, bucket_name, key_name,
+            aws_access_key_id=None, aws_secret_access_key=None,
+            df_column_names=False, gzip=False, gzip_compression_level=6):
+        """
+        Upload the given object to AWS S3.
+
+        Params:
+        * data (object) - object to upload
+        * bucket_name (str) - S3 bucket name
+        * key_name (str) - key name / "file path" in S3 to upload to
+        * aws_access_key_id (str) - Optional. AWS access key, if not using one of the
+            other locations to store/retrieve credentials
+        * aws_secret_access_key (str) - Optional. AWS secret, if not using one of the 
+            other locations to store/retrieve credentials
+        * df_column_names (bool) - Optional. Whether or not to include the column names of
+            pandas DataFrame as the first row of the csv
+        * gzip (bool) - Optional. Whether or not to gzip the file
+        * gzip_compression_level (int) - Optional. Override gzip compression level
+        """
+        S3Writer.upload(data, bucket_name, key_name, aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=aws_secret_access_key, gzip=gzip,
+                df_column_names=df_column_names,
+                gzip_compression_level=gzip_compression_level)
 
 
 lnk = Link.instance()
