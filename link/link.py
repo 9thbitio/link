@@ -173,7 +173,7 @@ class Link(object):
     __msg = None
     __name__ = "lnk"
 
-    LNK_USER_DIR = '%s/.link' % os.getenv('HOME')
+    LNK_USER_DIR = '%s/.link' %  os.path.expanduser("~")
     LNK_DIR = os.getenv('LNK_DIR') or LNK_USER_DIR
     LNK_CONFIG = LNK_DIR + "/link.config"
     DEFAULT_CONFIG = {"dbs": {}, "apis": {}}
