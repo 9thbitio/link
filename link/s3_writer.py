@@ -7,8 +7,16 @@ Dependencies:
 Requires AWS key/secret to be set, for details please see
 http://boto3.readthedocs.io/en/latest/guide/configuration.html
 """
-from cStringIO import InputType, OutputType, StringIO as cString
-from StringIO import StringIO
+import six
+if six.PY2:
+    from cStringIO import InputType, OutputType, StringIO
+    from StringIO import StringIO as StringIOType
+
+    already_stringio = (InputType, OutputType, StringIOType)
+else:
+    from io import StringIO
+    already_stringio = (StringIO,)
+
 from gzip import GzipFile
 from io import SEEK_SET
 
@@ -38,14 +46,17 @@ class S3Writer(object):
     @classmethod
     def _serialize_data(cls, data, gzip=False, df_column_names=False,
             gzip_compression_level=6):
+        if six.PY3:
+            raise Exception("python3 currently not supported for this method! Sorry!")
+
         # easy, it's already in a stringio ready to go
-        if any([isinstance(data, c) for c in (InputType, OutputType, StringIO)]):
+        if any([isinstance(data, c) for c in already_stringio]):
             # make sure we reset to beginning, just in case, in preparation of read()
             # must be compatible with StringIO and cStringIO, so can't use reset()
             data.seek(SEEK_SET)
             return data
         
-        data_io = cString()
+        data_io = StringIO()
         if gzip:
             io = GzipFile(fileobj=data_io, mode='w', compresslevel=gzip_compression_level)
         else:
@@ -61,7 +72,7 @@ class S3Writer(object):
         if gzip:
             io.close()
 
-        data_io.reset()
+        data_io.seek(SEEK_SET)
         return data_io
 
     @classmethod
