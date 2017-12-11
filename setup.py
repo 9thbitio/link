@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 from setuptools import setup
 import os
-import link
+import version as _version
 
 dir = os.path.split(os.path.abspath(__file__))[0]
 
@@ -18,19 +18,19 @@ CLASSIFIERS = ['Development Status :: 4 - Beta',
 EMAIL = ''
 SETUP_ARGS = {}
 DATA_FILES = [('link/configs', ['link/configs/link.config'])]
-REQUIRES = ['requests>=2.0.0', 'requests_oauthlib>=0.4.0', 'pandas', 'xmltodict' ]
+REQUIRES = ['requests>=2.0.0', 'requests_oauthlib>=0.4.0', 'pandas', 'xmltodict' , 'six']
 
 # write out the version file so we can keep track on what version the built
 # package is
 
 # call setup so it can build the package
-setup(name=link.__title__,
-      version=link.__version__,
+setup(name=_version.__title__,
+      version=_version.__version__,
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
-      license=link.__license__,
+      license=_version.__license__,
       maintainer_email=EMAIL,
-      maintainer=link.__author__,
+      maintainer=_version.__author__,
       url=URL,
       packages=['link', 'link.wrappers', 'link.configs'],
       #package_data = {'link.configs': ['link.configs/*config']},

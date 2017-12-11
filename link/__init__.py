@@ -34,19 +34,14 @@ Sample Code::
 :license: Apache2, see LICENSE for more details.
 
 """
+
 from __future__ import absolute_import
+
 import six
 
 if six.PY3:
     unicode = str
     str = bytes
-
-#import all of this version information
-__version__ = '1.2.7'
-__author__ = 'David Himrod'
-__license__ = 'Apache 2.0'
-__copyright__ = 'Copyright 2017 David Himrod'
-__title__ = 'link'
 
 from .link import Link, Wrapper, lnk
 
