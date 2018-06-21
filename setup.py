@@ -1,9 +1,15 @@
 #!/usr/bin/env python
 from setuptools import setup
 import os
-import version as _version
 
 dir = os.path.split(os.path.abspath(__file__))[0]
+
+#import all of this version information
+__version__ = '1.2.9'
+__author__ = 'David Himrod'
+__license__ = 'Apache 2.0'
+__copyright__ = 'Copyright 2017 David Himrod'
+__title__ = 'link'
 
 
 DESCRIPTION = "Easy and consistent access to the objects you care about"
@@ -24,13 +30,13 @@ REQUIRES = ['requests>=2.0.0', 'requests_oauthlib>=0.4.0', 'pandas', 'xmltodict'
 # package is
 
 # call setup so it can build the package
-setup(name=_version.__title__,
-      version=_version.__version__,
+setup(name=__title__,
+      version=__version__,
       description=DESCRIPTION,
       long_description=LONG_DESCRIPTION,
-      license=_version.__license__,
+      license=__license__,
       maintainer_email=EMAIL,
-      maintainer=_version.__author__,
+      maintainer=__author__,
       url=URL,
       packages=['link', 'link.wrappers', 'link.configs'],
       #package_data = {'link.configs': ['link.configs/*config']},
