@@ -47,18 +47,25 @@ def list_to_dataframe(rows, names):
     :params names: the column names for the dataframe
     """
     from pandas import DataFrame
+    col_convert_func = None
     try:
         import pandas._tseries as lib
+        col_convert_func = lib.convert_sql_column
     except ImportError:
         import pandas.lib as lib
+        try:
+            col_convert_func = lib.convert_sql_column
+        except:
+            pass
 
     if isinstance(rows, tuple):
         rows = list(rows)
 
     columns = dict(zip(names, lib.to_object_array_tuples(rows).T))
 
-    for k, v in columns.iteritems():
-        columns[k] = lib.convert_sql_column(v)
+    if col_convert_func is not None:
+        for k, v in columns.iteritems():
+            columns[k] = lib.convert_sql_column(v)
 
     return DataFrame(columns, columns=names)
 
