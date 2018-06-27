@@ -1,4 +1,5 @@
 import os
+from functools import partial
 
 import six
 
@@ -56,7 +57,7 @@ def list_to_dataframe(rows, names):
         try:
             col_convert_func = lib.convert_sql_column
         except:
-            pass
+            col_convert_func = partial(lib.maybe_convert_objects, try_float=1)
 
     if isinstance(rows, tuple):
         rows = list(rows)
@@ -65,7 +66,7 @@ def list_to_dataframe(rows, names):
 
     if col_convert_func is not None:
         for k, v in columns.iteritems():
-            columns[k] = lib.convert_sql_column(v)
+            columns[k] = col_convert_func(v)
 
     return DataFrame(columns, columns=names)
 
