@@ -5,7 +5,7 @@ from link.wrappers import APIRequestWrapper, APIResponseWrapper
 
 
 class ForensiqAuth(AuthBase):
-    
+
     def __init__(self, access_token):
         self.access_token = access_token
 
@@ -27,7 +27,7 @@ class ForensiqAPIResponseWrapper(APIResponseWrapper):
 
     def noauth(self):
         try:
-            return self.json['error_description'] in self.FORENSIQ_NOAUTH_ERRORS 
+            return self.json['error_description'] in self.FORENSIQ_NOAUTH_ERRORS
         except:
             return False
 
@@ -36,7 +36,7 @@ class ForensiqAPI(APIRequestWrapper):
 
     _FIRST_AUTH_GRANT_TYPE = "password"
     _REAUTH_GRANT_TYPE = "refresh_token"
-    
+
     def __init__(self, wrap_name=None, base_url=None, user=None, password=None,
             client_id=None, client_secret=None):
         # super init calls authenticate(), so these need to be defined first
@@ -47,7 +47,7 @@ class ForensiqAPI(APIRequestWrapper):
 
         super(ForensiqAPI, self).__init__(wrap_name=wrap_name, base_url=base_url,
                 user=user, password=password, response_wrapper=ForensiqAPIResponseWrapper)
-        
+
     def authenticate(self):
         auth_data = None
         if self.refresh_token is None:
