@@ -55,12 +55,15 @@ from .utils import load_json_file
 from .common import Cacheable
 from .exceptions import LNKConfigException, LNKAttributeException
 from .s3_writer import S3Writer
+from . import _secrets
 
 # To set up logging manager
 from ._logging_setup import LogHandler
 
 # this gets the current directory of link
 lnk_dir = os.path.split(os.path.abspath(__file__))[0]
+
+AWS_SECRETMANAGER_KEY = "aws_secret_manager_key"
 
 class Callable(object):
     """
@@ -422,6 +425,15 @@ class Link(object):
 
         if wrap_name:
             wrap_config = self.config(wrap_name)
+            
+            #if they are using the aws secret manager, let's pull username nad
+            #password from there
+            if AWS_SECRETMANAGER_KEY in wrap_config:
+                secret = _secrets.get_secret(wrap_config[AWS_SECRETMANAGER_KEY])
+                wrap_config['user'] = secret.get('user', secret.get('username')) 
+                wrap_config['password'] = secret.get('password', secret.get('pass')) 
+                wrap_config.pop(AWS_SECRETMANAGER_KEY)
+
             # if its just a string, make a wrapper that is preloaded with
             # the string as the command.
             if isinstance(wrap_config, str) or isinstance(wrap_config, unicode):
