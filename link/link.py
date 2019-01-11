@@ -55,12 +55,15 @@ from .utils import load_json_file
 from .common import Cacheable
 from .exceptions import LNKConfigException, LNKAttributeException
 from .s3_writer import S3Writer
+from . import _secrets
 
 # To set up logging manager
 from ._logging_setup import LogHandler
 
 # this gets the current directory of link
 lnk_dir = os.path.split(os.path.abspath(__file__))[0]
+
+AWS_SECRETMANAGER_KEY = "aws_secret_manager_key"
 
 class Callable(object):
     """
@@ -325,7 +328,7 @@ class Link(object):
                         #.link/link.config file in your HOME directory""")
 
         if not self.__config:
-            try: 
+            try:
                 self.__config = load_json_file(self.__config_file)
             except:
                 raise LNKConfigException("Error parsing config")
@@ -422,6 +425,15 @@ class Link(object):
 
         if wrap_name:
             wrap_config = self.config(wrap_name)
+
+            #if they are using the aws secret manager, let's pull username nad
+            #password from there
+            if AWS_SECRETMANAGER_KEY in wrap_config:
+                secret = _secrets.get_secret(wrap_config[AWS_SECRETMANAGER_KEY])
+                wrap_config['user'] = secret.get('user', secret.get('username'))
+                wrap_config['password'] = secret.get('password', secret.get('pass'))
+                wrap_config.pop(AWS_SECRETMANAGER_KEY)
+
             # if its just a string, make a wrapper that is preloaded with
             # the string as the command.
             if isinstance(wrap_config, str) or isinstance(wrap_config, unicode):
@@ -485,7 +497,7 @@ class Link(object):
         * key_name (str) - key name / "file path" in S3 to upload to
         * aws_access_key_id (str) - Optional. AWS access key, if not using one of the
             other locations to store/retrieve credentials
-        * aws_secret_access_key (str) - Optional. AWS secret, if not using one of the 
+        * aws_secret_access_key (str) - Optional. AWS secret, if not using one of the
             other locations to store/retrieve credentials
         * df_column_names (bool) - Optional. Whether or not to include the column names of
             pandas DataFrame as the first row of the csv
@@ -556,7 +568,7 @@ class Wrapper(Callable):
             return lnk(wrapper)
 
         raise AttributeError("No such attribute found %s" % name)
-    
+
     def __getitem__(self, name):
         return self.__getattr__(name)
 

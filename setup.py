@@ -5,7 +5,7 @@ import os
 dir = os.path.split(os.path.abspath(__file__))[0]
 
 #import all of this version information
-__version__ = '1.2.14'
+__version__ = '1.2.15'
 __author__ = 'David Himrod'
 __license__ = 'Apache 2.0'
 __copyright__ = 'Copyright 2017 David Himrod'
@@ -16,7 +16,7 @@ DESCRIPTION = "Easy and consistent access to the objects you care about"
 LONG_DESCRIPTION = "Easy and consistent access to the objects you care about"
 URL = ''
 DOWNLOAD_URL = ''
-CLASSIFIERS = ['Development Status :: 4 - Beta',     
+CLASSIFIERS = ['Development Status :: 4 - Beta',
                'Programming Language :: Python',
                'Programming Language :: Python :: 2',
                'Programming Language :: Python :: 3'
