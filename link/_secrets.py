@@ -2,14 +2,22 @@ import base64
 import json
 
 
+SECRETS_SERVICE = "secretsmanager"
+DEFAULT_REGION = "us-east-1"
+
+
 def get_secret(key):
 
     import boto3
-    from botocore.exceptions import ClientError
+    from botocore.exceptions import ClientError, NoRegionError
 
 
     session = boto3.session.Session()
-    client = session.client(service_name='secretsmanager')
+    try:
+        client = session.client(service_name=SECRETS_SERVICE)
+    except NoRegionError:
+        print("Warning, no default region set, defaulting to us-east-1. Please set a default region in either your aws config file or via environment variable AWS_DEFAULT_REGION")
+        client = session.client(service_name=SECRETS_SERVICE, region_name=DEFAULT_REGION)
 
     try:
         get_secret_value_response = client.get_secret_value(SecretId=key)
