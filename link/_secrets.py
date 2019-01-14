@@ -22,7 +22,7 @@ def get_secret(key):
     try:
         get_secret_value_response = client.get_secret_value(SecretId=key)
 
-    except:
+    except Exception as e:
         if e.response['Error']['Code'] == 'DecryptionFailureException':
             # Secrets Manager can't decrypt the protected secret text using the provided KMS key.
             # Deal with the exception here, and/or rethrow at your discretion.
@@ -42,6 +42,8 @@ def get_secret(key):
         elif e.response['Error']['Code'] == 'ResourceNotFoundException':
             # We can't find the resource that you asked for.
             # Deal with the exception here, and/or rethrow at your discretion.
+            raise e
+        else:
             raise e
     else:
         if 'SecretString' in get_secret_value_response:
