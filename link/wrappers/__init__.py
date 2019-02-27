@@ -18,3 +18,4 @@ from .prestowrapper import *
 from .salesforcewrappers import *
 from .forensiqwrapper import *
 from .forensiqimpactwrapper import *
+from .moatwrapper import *
