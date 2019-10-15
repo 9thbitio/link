@@ -41,19 +41,6 @@ class DBCursorWrapper(Wrapper):
                 self._columns = [x[0].lower() for x in self.cursor.description]
         return self._data
 
-    def as_dataframe(self):
-        try:
-            from pandas import DataFrame
-        except:
-            raise Exception("pandas required to select dataframe. Please install"  +
-                            "sudo easy_install pandas")
-        columns = self.columns
-        #check to see if they have duplicate column names
-        if len(columns)>len(set(columns)):
-            raise Exception("Cannot have duplicate column names "
-                            "in your query %s, please rename" % columns)
-        return list_to_dataframe(self.data, columns)
-
     def _create_dict(self, row):
         return dict(zip(self.columns, row))
 
@@ -147,13 +134,14 @@ class DBConnectionWrapper(Wrapper):
         being the names of the colums in the dataframe
         """
         try:
-            from pandas import DataFrame
+            import pandas 
         except:
             raise Exception("pandas required to select dataframe. Please install"  +
                             "sudo easy_install pandas")
         
-        cursor = self.execute(query, args = args)
-        return cursor.as_dataframe()
+        data = pandas.read_sql(query, self._wrapped, params = args)
+        data.rename({x: x.lower() for x in data.columns}, axis=1, inplace=True)
+        return data
 
     def select(self, query=None, chunk_name = None, args=()):
         """
