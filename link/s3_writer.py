@@ -14,7 +14,7 @@ if six.PY2:
 
     already_stringio = (InputType, OutputType, StringIOType)
 else:
-    from io import StringIO
+    from io import StringIO, BytesIO
     already_stringio = (StringIO,)
 
 from gzip import GzipFile
@@ -46,8 +46,6 @@ class S3Writer(object):
     @classmethod
     def _serialize_data(cls, data, gzip=False, df_column_names=False,
             gzip_compression_level=6):
-        if six.PY3:
-            raise Exception("python3 currently not supported for this method! Sorry!")
 
         # easy, it's already in a stringio ready to go
         if any([isinstance(data, c) for c in already_stringio]):
@@ -56,14 +54,22 @@ class S3Writer(object):
             data.seek(SEEK_SET)
             return data
         
-        data_io = StringIO()
+        if six.PY2:
+            data_io = StringIO()
+        else:
+            data_io = BytesIO()
+
         if gzip:
             io = GzipFile(fileobj=data_io, mode='w', compresslevel=gzip_compression_level)
         else:
             io = data_io
 
         if any([isinstance(data, c) for c in (dict, list, str)]):
-            io.write(json.dumps(data))
+            if six.PY2:
+                io.write(json.dumps(data))
+            else:
+                io.write(str.encode(json.dumps(data)))
+
         elif isinstance(data, DataFrame) or isinstance(data, Series):
             data.to_csv(io, index=False, header=df_column_names)
         else:
