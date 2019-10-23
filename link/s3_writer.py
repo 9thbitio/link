@@ -71,7 +71,11 @@ class S3Writer(object):
                 io.write(str.encode(json.dumps(data)))
 
         elif isinstance(data, DataFrame) or isinstance(data, Series):
-            data.to_csv(io, index=False, header=df_column_names)
+            if six.PY2:
+                data.to_csv(io, index=False, header=df_column_names)
+            else:
+                io.write(str.encode(data.to_csv(index=False, header=df_column_names)))
+                
         else:
             io.write(str(data))
 
