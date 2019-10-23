@@ -5,7 +5,7 @@ import os
 dir = os.path.split(os.path.abspath(__file__))[0]
 
 #import all of this version information
-__version__ = '2.0.1'
+__version__ = '2.0.2'
 __author__ = 'David Buonasera'
 __license__ = 'Apache 2.0'
 __copyright__ = 'Copyright 2019 David Buonasera'
