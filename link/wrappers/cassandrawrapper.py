@@ -1,7 +1,7 @@
 import time
 
-
 from link import Wrapper
+from link.exceptions import LNKAttributeException
 
 
 class CassandraResultsetWrapper(Wrapper):
@@ -66,8 +66,8 @@ class CassandraDB(Wrapper):
         self._data = None
         if kwargs:
             self.__dict__.update(kwargs)
-        self.connection = self.create_connection()
         super(self.__class__, self).__init__(wrap_name)
+        self.connection = self.create_connection()
 
     def execute(self, query, args=()):
         """Execute query.
@@ -112,5 +112,8 @@ class CassandraDB(Wrapper):
             self.nodes, load_balancing_policy=RoundRobinPolicy(), auth_provider=auth_provider, compression=True
         )
         conn = cluster.connect(self.keyspace)
-        conn.default_fetch_size = self.default_fetch_size or 10000
+        try:
+            conn.default_fetch_size = self.default_fetch_size
+        except LNKAttributeException:
+            pass
         return conn
