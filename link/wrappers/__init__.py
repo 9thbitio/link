@@ -19,3 +19,4 @@ from .salesforcewrappers import *
 from .forensiqwrapper import *
 from .forensiqimpactwrapper import *
 from .moatwrapper import *
+from .cassandrawrapper import CassandraDB
