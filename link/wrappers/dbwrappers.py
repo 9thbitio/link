@@ -47,6 +47,20 @@ class DBCursorWrapper(Wrapper):
     def as_dict(self):
         return map(self._create_dict,self.data)
 
+    def as_dataframe(self):
+        try:
+            from pandas import DataFrame
+        except:
+            raise Exception("pandas required to select dataframe. Please install"  +
+                            "sudo easy_install pandas")
+        columns = self.columns
+        #check to see if they have duplicate column names
+        if len(columns)>len(set(columns)):
+            raise Exception("Cannot have duplicate column names "
+                            "in your query %s, please rename" % columns)
+        return list_to_dataframe(self.data, columns)
+
+    
     def __iter__(self):
         return self.data.__iter__()
 
