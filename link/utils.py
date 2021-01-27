@@ -65,7 +65,7 @@ def list_to_dataframe(rows, names):
     columns = dict(zip(names, lib.to_object_array_tuples(rows).T))
 
     if col_convert_func is not None:
-        for k, v in columns.iteritems():
+        for k, v in six.iteritems(columns):
             columns[k] = col_convert_func(v)
 
     return DataFrame(columns, columns=names)
