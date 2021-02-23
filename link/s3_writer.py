@@ -22,7 +22,7 @@ from io import SEEK_SET
 
 try:
     from pandas import DataFrame, Series
-except;
+except:
     pass
 
 try:
