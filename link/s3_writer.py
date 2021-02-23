@@ -20,7 +20,10 @@ else:
 from gzip import GzipFile
 from io import SEEK_SET
 
-from pandas import DataFrame, Series
+try:
+    from pandas import DataFrame, Series
+except;
+    pass
 
 try:
     import ujson as json
