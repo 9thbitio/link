@@ -3,17 +3,31 @@ import contextlib
 from link import Wrapper
 from link.utils import list_to_dataframe
 from datetime import datetime
+
 from .dbwrappers import DBConnectionWrapper, DBCursorWrapper
+from .utils import pd
+
+# If pandas is available, use its types for missing data. Otherwise, fall
+# back to Python-native types.
+if pd is not None:
+    NOT_A_NUMBER = pd.np.nan
+    NOT_A_DATETIME = pd.NaT
+else:
+    NOT_A_NUMBER = float('nan')
+    NOT_A_DATETIME = None
+
 
 class HiveCursorWrapper(Wrapper):
     """
     Wraps a select and makes it easier to tranform the data
     """
     def __init__(self, cursor, query=None, wrap_name=None):
-        import pandas as pd
-        #ghetto, but we make the assumption that pandas is not required
-        self.nat = pd.NaT
-        self.nan = pd.np.nan
+        if pd is not None:
+            self.nat = pd.NaT
+            self.nan = pd.np.nan
+        else:
+            self.nat = None
+            self.nan = float('nan')
         self.cursor = cursor
         self._data = None
         self._columns = None
@@ -83,12 +97,6 @@ class HiveCursorWrapper(Wrapper):
         return map(self._create_dict, self.data)
 
     def as_dataframe(self, chunk_size = None):
-        try:
-            from pandas import DataFrame
-        except:
-            raise Exception("pandas required to select dataframe. "
-                            "Please install: sudo pip install pandas")
-        
         if chunk_size:
             rows = self.cursor.fetchN(chunk_size)
             data = map(self._parse_row, rows)
@@ -143,12 +151,6 @@ class HiveDB(Wrapper):
         Select everything into a datafrome with the column names
         being the names of the colums in the dataframe
         """
-        try:
-            from pandas import DataFrame
-        except:
-            raise Exception("pandas required to select dataframe. "
-                            "Please install: sudo pip install pandas")
-
         self._wrapped.open()  
         cursor = self._execute(query)
         df = cursor.as_dataframe()

@@ -133,13 +133,10 @@ class DBConnectionWrapper(Wrapper):
         Select everything into a datafrome with the column names
         being the names of the colums in the dataframe
         """
-        try:
-            import pandas 
-        except:
-            raise Exception("pandas required to select dataframe. Please install"  +
-                            "sudo easy_install pandas")
+        if pd is None:
+            raise RuntimeError('pandas is required to use dataframes')
         
-        data = pandas.read_sql(query, self._wrapped, params = args)
+        data = pd.read_sql(query, self._wrapped, params = args)
         data.rename({x: x.lower() for x in data.columns}, axis=1, inplace=True)
         return data
 

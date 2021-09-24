@@ -9,6 +9,13 @@ if six.PY3:
     izip = zip
 else:
     from itertools import izip
+
+# pandas is an optional dependency
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
 # -*- coding: utf-8 -*-
 
 """
@@ -47,17 +54,10 @@ def list_to_dataframe(rows, names):
     :params rows: the data you want to put in the dataframe
     :params names: the column names for the dataframe
     """
-    from pandas import DataFrame
-    col_convert_func = None
-    try:
-        import pandas._tseries as lib
-        col_convert_func = lib.convert_sql_column
-    except ImportError:
-        import pandas.lib as lib
-        try:
-            col_convert_func = lib.convert_sql_column
-        except:
-            col_convert_func = partial(lib.maybe_convert_objects, try_float=1)
+    if pd is None:
+        raise RuntimeError('pandas is required to use dataframes')
+
+    col_convert_func = partial(pd._libs.lib.maybe_convert_objects, try_float=1)
 
     if isinstance(rows, tuple):
         rows = list(rows)
@@ -68,7 +68,7 @@ def list_to_dataframe(rows, names):
         for k, v in columns.iteritems():
             columns[k] = col_convert_func(v)
 
-    return DataFrame(columns, columns=names)
+    return pd.DataFrame(columns, columns=names)
 
 
 
@@ -78,3 +78,5 @@ def array_pagenate(n, iterable, padvalue=None):
     pad the end with your default value to make fully even.  
     """
     return izip(*[chain(iterable, repeat(padvalue, n-1))]*n)
+
+
