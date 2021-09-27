@@ -26,7 +26,7 @@ SETUP_ARGS = {}
 DATA_FILES = [('link/configs', ['link/configs/link.config'])]
 REQUIRES = ['requests>=2.0.0', 'requests_oauthlib>=0.4.0', 'xmltodict' , 'six']
 EXTRAS_REQUIRE = {
-      'pandas': ['pandas'],
+      'pandas': ['pandas>=1.0.0'],
 }
 
 # write out the version file so we can keep track on what version the built
