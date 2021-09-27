@@ -1,4 +1,5 @@
 from link import Wrapper
+from link.utils import pd
 
 
 class PrestoDB(Wrapper):
@@ -24,10 +25,8 @@ class PrestoDB(Wrapper):
         Select everything into a dataframe with the column names
         being the names of the columns in the dataframe
         """
-        try:
-            import pandas as pd
-        except:
-            raise Exception("pandas required to select dataframe.")
+        if pd is None:
+            raise RuntimeError('pandas is required to use dataframes')
 
         df = pd.read_sql(query, self.engine)
         return df

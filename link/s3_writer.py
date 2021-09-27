@@ -21,14 +21,12 @@ from gzip import GzipFile
 from io import SEEK_SET
 
 try:
-    from pandas import DataFrame, Series
-except:
-    pass
-
-try:
     import ujson as json
 except ImportError:
     import json
+
+
+from link.utils import pd
 
 
 class S3Writer(object):
@@ -73,7 +71,7 @@ class S3Writer(object):
             else:
                 io.write(str.encode(json.dumps(data)))
 
-        elif isinstance(data, DataFrame) or isinstance(data, Series):
+        elif (pd is not None) and (isinstance(data, pd.DataFrame) or isinstance(data, pd.Series)):
             if six.PY2:
                 data.to_csv(io, index=False, header=df_column_names)
             else:

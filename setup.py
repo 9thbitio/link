@@ -5,7 +5,7 @@ import os
 dir = os.path.split(os.path.abspath(__file__))[0]
 
 #import all of this version information
-__version__ = '2.0.4'
+__version__ = '2.1.0'
 __author__ = 'David Buonasera'
 __license__ = 'Apache 2.0'
 __copyright__ = 'Copyright 2019 David Buonasera'
@@ -24,7 +24,10 @@ CLASSIFIERS = ['Development Status :: 4 - Beta',
 EMAIL = ''
 SETUP_ARGS = {}
 DATA_FILES = [('link/configs', ['link/configs/link.config'])]
-REQUIRES = ['requests>=2.0.0', 'requests_oauthlib>=0.4.0', 'pandas', 'xmltodict' , 'six']
+REQUIRES = ['requests>=2.0.0', 'requests_oauthlib>=0.4.0', 'xmltodict' , 'six']
+EXTRAS_REQUIRE = {
+      'pandas': ['pandas>=1.0.0'],
+}
 
 # write out the version file so we can keep track on what version the built
 # package is
@@ -39,6 +42,7 @@ setup(name=__title__,
       maintainer=__author__,
       url=URL,
       packages=['link', 'link.wrappers', 'link.configs'],
+      extras_require=EXTRAS_REQUIRE,
       #package_data = {'link.configs': ['link.configs/*config']},
       install_requires=REQUIRES,
       #data_files = DATA_FILES,

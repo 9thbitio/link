@@ -5,11 +5,11 @@ Installation:
 
 The latest stable can be installed using easy_install or pip::
 
-    sudo pip install link
+    pip install link
 
 or::
 
-    sudo easy_install link
+    easy_install link
 
 You can also clone and install it::
 
@@ -33,7 +33,9 @@ installed.  Here is a list of packages that may be used.::
     pyscopg ==> PostgresDB
     pyhive ==> PrestoDB
 
-You should be able to pip or easy_install any of these packages very easily
+You should be able to pip or easy_install any of these packages very easily.
 
+Additional functionality is enabled when the ``pandas`` package is installed.
+To install it along with ``link``, specify it as an optional dependency::
 
-
+    pip install link[pandas]

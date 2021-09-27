@@ -2,6 +2,7 @@ import time
 
 from link import Wrapper
 from link.exceptions import LNKAttributeException
+from link.utils import pd
 
 
 class CassandraResultsetWrapper(Wrapper):
@@ -21,14 +22,16 @@ class CassandraResultsetWrapper(Wrapper):
     def as_dataframe(self):
         """Convert query result rows to pandas dataframe.
         """
-        from pandas import DataFrame
+        if pd is None:
+            raise RuntimeError('pandas is required to use dataframes')
+
         from cassandra import DriverException
-        df = DataFrame()
+        df = pd.DataFrame()
         data = self.result
         while True:
             for retry in range(self.max_retries):
                 try:
-                    df = df.append(DataFrame(columns=data.column_names, data=(list(row) for row in data.current_rows)))
+                    df = df.append(pd.DataFrame(columns=data.column_names, data=(list(row) for row in data.current_rows)))
                     break
                 except DriverException:
                     if retry >= self.max_retries - 1:

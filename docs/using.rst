@@ -135,9 +135,8 @@ Database connections work the same way::
 Queries to Pandas Dataframes
 -----------------------------
 
-If you don't know about pandas you are missing out (make sure its installed).  
-You can select any query into Pandas DataFrames using the select function
-instead of the select function of a DBConnectionWrapper::
+``pandas`` users: you can select any query into Pandas DataFrames using the
+select function instead of the select function of a DBConnectionWrapper::
 
     In [35]: my_db = lnk.dbs.my_db
 
@@ -155,6 +154,7 @@ instead of the select function of a DBConnectionWrapper::
     dtypes: float64(2), int64(3), object(4)
 
 pandas allows you to do groupbys, sums, aggregations, joins...and much more in
-memory.  For more information see the pandas homepage (TODO put link in here)
+memory.  For more information see the
+`pandas homepage <https://pandas.pydata.org/>`__.
 
 
