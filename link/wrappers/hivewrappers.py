@@ -5,15 +5,16 @@ from link.utils import list_to_dataframe
 from datetime import datetime
 
 from .dbwrappers import DBConnectionWrapper, DBCursorWrapper
-from .utils import pd
+from ..utils import pd
 
 # If pandas is available, use its types for missing data. Otherwise, fall
 # back to Python-native types.
+
+NOT_A_NUMBER = float('nan')
+
 if pd is not None:
-    NOT_A_NUMBER = pd.np.nan
     NOT_A_DATETIME = pd.NaT
 else:
-    NOT_A_NUMBER = float('nan')
     NOT_A_DATETIME = None
 
 

@@ -2,7 +2,7 @@ from contextlib import closing, contextmanager
 import six
 
 from link import Wrapper
-from link.utils import list_to_dataframe
+from link.utils import list_to_dataframe, pd
 from . import defaults
 
 
