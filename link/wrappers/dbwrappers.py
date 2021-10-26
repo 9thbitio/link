@@ -600,3 +600,89 @@ class SnowflakeDB(DBConnectionWrapper):
         except:
             self.rollback()
             raise
+
+
+class RedshiftDB(DBConnectionWrapper):
+
+    def __init__(self, wrap_name=None, user=None, password=None,
+                 host=None, database=None, port=defaults.REDSHIFT_DEFAULT_PORT,
+                 aws_profile=defaults.AWS_DEFAULT_PROFILE, cluster_identifier=None,
+                 autocommit=False):
+        """
+        A connection for a AWS Redshift Database.  Requires that
+        redshift_connector is installed
+
+        :param user: your user name for that database
+        :param password: Your password to the database
+        :param host: host name or ip of the database server
+        :param database: name of the database on that server
+        :param aws_profile: AWS auth profile to use instead of login/password
+        :param cluster_identifier: if set AWS IAM will be used for DB cluster discovery and auth
+        :param autocommit: Autocommit if True, default is False
+        """
+        self.user = user
+        self.password = password
+        self.host = host
+        self.database = database
+        self.port = port
+        self.aws_profile = aws_profile
+        self.cluster_identifier=cluster_identifier
+        self.autocommit = autocommit
+        super(RedshiftDB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        """
+        Override the create_connection from the DbConnectionWrapper
+        class which get's called in it's initializer
+        """
+        import redshift_connector
+
+        if self.cluster_identifier:
+            conn = redshift_connector.connect(
+                iam=True,
+                database=self.database,
+                db_user=self.user,
+                user='',
+                password='',
+                cluster_identifier=self.cluster_identifier,
+                profile=self.aws_profile,
+            )
+        else:
+            conn = redshift_connector.connect(
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password,
+            )
+        conn.autocommit = self.autocommit
+        return conn
+
+    @contextmanager
+    def transaction(self):
+        """
+        Executes a block within a transaction (BEGIN; .... ; COMMIT/ROLLBACK;). Rolls back
+        on any raised Exception. Note that this will NOT close the connection.
+        """
+        try:
+            cursor = self.cursor()
+            cursor.execute("BEGIN")
+            yield cursor
+            self.commit()
+        except:
+            self.rollback()
+            raise
+
+    def select_dataframe(self, query, args=()):
+        """
+        Select everything into a datafrome with the column names
+        being the names of the colums in the dataframe
+        """
+        if pd is None:
+            raise RuntimeError('pandas is required to use dataframes')
+
+        cursor = self.cursor()
+        cursor.execute(query, args)
+        data = cursor.fetch_dataframe()
+        data.rename({x: x.lower() for x in data.columns}, axis=1, inplace=True)
+        return data
