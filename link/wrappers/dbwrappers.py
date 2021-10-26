@@ -672,3 +672,17 @@ class RedshiftDB(DBConnectionWrapper):
         except:
             self.rollback()
             raise
+
+    def select_dataframe(self, query, args=()):
+        """
+        Select everything into a datafrome with the column names
+        being the names of the colums in the dataframe
+        """
+        if pd is None:
+            raise RuntimeError('pandas is required to use dataframes')
+
+        cursor = self.cursor()
+        cursor.execute(query, args)
+        data = cursor.fetch_dataframe()
+        data.rename({x: x.lower() for x in data.columns}, axis=1, inplace=True)
+        return data
