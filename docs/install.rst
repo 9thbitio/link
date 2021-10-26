@@ -32,6 +32,7 @@ installed.  Here is a list of packages that may be used.::
     pymongo ==> MongoDB
     pyscopg ==> PostgresDB
     pyhive ==> PrestoDB
+    redshift_connector ==> RedshiftDB
 
 You should be able to pip or easy_install any of these packages very easily.
 
