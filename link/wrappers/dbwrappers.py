@@ -545,7 +545,7 @@ class PostgresDB(DBConnectionWrapper):
 class SnowflakeDB(DBConnectionWrapper):
 
     def __init__(self, wrap_name=None, user=None, password=None, account_name=None,
-            database=None, schema=None, warehouse=None):
+            database=None, schema=None, warehouse=None, authenticator=None):
         """
         A connection to a Snowflake account. Requires snowflake-connector-python.
 
@@ -556,6 +556,7 @@ class SnowflakeDB(DBConnectionWrapper):
             explicitly from connection.
         :param database: Database to use (Optional). Requires setting a warehouse.
         :param schema: Schema to use (Optional). Requires setting a database.
+        :param authenticator: Authenticator to use (Optional) instead of password.
         """
         self.user = user
         self.password = password
@@ -563,16 +564,24 @@ class SnowflakeDB(DBConnectionWrapper):
         self.database = database
         self.schema = schema
         self.warehouse = warehouse
+        self.authenticator = authenticator
         super(SnowflakeDB, self).__init__(wrap_name=wrap_name)
 
     def create_connection(self):
         import snowflake.connector as sf
 
-        conn = sf.connect(
-                user=self.user,
-                password=self.password,
-                account=self.account_name
-                )
+        if self.authenticator is not None:
+            conn = sf.connect(
+                    user=self.user,
+                    authenticator=self.authenticator,
+                    account=self.account_name
+                    )
+        else:
+            conn = sf.connect(
+                    user=self.user,
+                    password=self.password,
+                    account=self.account_name
+                    )
 
         if self.warehouse is not None:
             conn.cursor().execute("USE warehouse {};".format(self.warehouse))
