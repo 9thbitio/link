@@ -611,6 +611,54 @@ class SnowflakeDB(DBConnectionWrapper):
             raise
 
 
+class DatabricksSQLWarehouseDB(DBConnectionWrapper):
+
+    def __init__(self, wrap_name=None, hostname=None, host=None, http_path=None,
+                 access_token=None, catalog=None, schema=None):
+        """
+        A connection to a Databricks SQL Warehouse. Requires databricks-sql-connector.
+
+        :param hostname: Databricks workspace hostname (without protocol)
+        :param host: Alias for hostname
+        :param http_path: HTTP path for the SQL Warehouse
+        :param access_token: Databricks personal access token
+        :param catalog: Optional catalog to use
+        :param schema: Optional schema to use
+        """
+        self.hostname = hostname or host
+        self.http_path = http_path
+        self.access_token = access_token
+        self.catalog = catalog
+        self.schema = schema
+        super(DatabricksSQLWarehouseDB, self).__init__(wrap_name=wrap_name)
+
+    def create_connection(self):
+        try:
+            import databricks.sql as dbsql
+        except ImportError:
+            raise Exception("databricks-sql-connector is required for DatabricksSQLWarehouseDB")
+
+        if not self.hostname:
+            raise Exception("hostname is required for DatabricksSQLWarehouseDB")
+        if not self.http_path:
+            raise Exception("http_path is required for DatabricksSQLWarehouseDB")
+        if not self.access_token:
+            raise Exception("access_token is required for DatabricksSQLWarehouseDB")
+
+        conn = dbsql.connect(
+            server_hostname=self.hostname,
+            http_path=self.http_path,
+            access_token=self.access_token,
+        )
+
+        if self.catalog is not None:
+            conn.cursor().execute("USE CATALOG {}".format(self.catalog))
+        if self.schema is not None:
+            conn.cursor().execute("USE SCHEMA {}".format(self.schema))
+
+        return conn
+
+
 class RedshiftDB(DBConnectionWrapper):
 
     def __init__(self, wrap_name=None, user=None, password=None,

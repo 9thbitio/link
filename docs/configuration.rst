@@ -69,4 +69,39 @@ The only rule is that names cannot have a "." in them, you will see why below.
 Create a structure that fits your usecase, by environment, by client (if you are
 a consultant)...etc.
 
+Secret values from env or SSM
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Any field in your config can be sourced from environment variables or AWS SSM
+Parameter Store by using a small dictionary instead of a literal value.
+
+Environment variable example::
+
+    {
+        "dbs":{
+           "my_db": {
+               "wrapper": "MysqlDB",
+               "host": "mysql-master.123fakestreet.net",
+               "user": "<user>",
+               "password": { "env": "MYSQL_PASSWORD" }
+           }
+        }
+    }
+
+SSM Parameter Store example::
+
+    {
+        "dbs":{
+           "my_databricks": {
+               "wrapper": "DatabricksSQLWarehouseDB",
+               "hostname": "adb-1234567890123456.7.azuredatabricks.net",
+               "http_path": "/sql/1.0/warehouses/abc123def456",
+               "access_token": { "ssm": "/prod/databricks/access_token" }
+           }
+        }
+    }
+
+Optional decrypt flag (defaults to true)::
+
+    { "access_token": { "ssm": "/prod/databricks/access_token", "decrypt": true } }
 
