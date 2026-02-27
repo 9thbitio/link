@@ -449,7 +449,7 @@ class Link(object):
             if AWS_SECRETMANAGER_KEY in wrap_config:
                 secret = _secrets.get_secret(wrap_config[AWS_SECRETMANAGER_KEY])
                 if secret.get('token', secret.get('auth_token', None)):
-                    wrap_config['access_token'] = secret.get('token', secret.get('access_token'))
+                    wrap_config['access_token'] = secret.get('token', secret.get('auth_token'))
                 if secret.get('user', secret.get('username', None)):
                     wrap_config['user'] = secret.get('user', secret.get('username'))
                 if secret.get('password', secret.get('pass', None)):
