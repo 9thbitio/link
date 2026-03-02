@@ -421,17 +421,39 @@ class Link(object):
         """
         Get a wrapper given the name or some arguments
         """
+        def resolve_value(value):
+            if isinstance(value, dict):
+                if 'ssm' in value:
+                    return _secrets.get_ssm_parameter(
+                        value.get('ssm'),
+                        decrypt=value.get('decrypt', True)
+                    )
+                if 'env' in value:
+                    return os.getenv(value.get('env'), value.get('default'))
+                return dict([(k, resolve_value(v)) for k, v in value.items()])
+            if isinstance(value, (list, tuple)):
+                return [resolve_value(v) for v in value]
+            return value
+
         wrap_config = {}
 
         if wrap_name:
             wrap_config = self.config(wrap_name)
 
+            # resolve env/ssm placeholders before any wrapper-specific handling
+            if isinstance(wrap_config, dict):
+                wrap_config = resolve_value(wrap_config)
+
             #if they are using the aws secret manager, let's pull username nad
             #password from there
             if AWS_SECRETMANAGER_KEY in wrap_config:
                 secret = _secrets.get_secret(wrap_config[AWS_SECRETMANAGER_KEY])
-                wrap_config['user'] = secret.get('user', secret.get('username'))
-                wrap_config['password'] = secret.get('password', secret.get('pass'))
+                if secret.get('token', secret.get('auth_token', None)):
+                    wrap_config['access_token'] = secret.get('token', secret.get('auth_token'))
+                if secret.get('user', secret.get('username', None)):
+                    wrap_config['user'] = secret.get('user', secret.get('username'))
+                if secret.get('password', secret.get('pass', None)):
+                    wrap_config['password'] = secret.get('password', secret.get('pass'))
                 wrap_config.pop(AWS_SECRETMANAGER_KEY)
 
             # if its just a string, make a wrapper that is preloaded with

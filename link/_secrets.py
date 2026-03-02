@@ -52,3 +52,21 @@ def get_secret(key):
             return json.loads(base64.b64decode(get_secret_value_response['SecretBinary']))
 
 
+def get_ssm_parameter(name, decrypt=True):
+    import boto3
+    from botocore.exceptions import ClientError, NoRegionError
+
+    session = boto3.session.Session()
+    try:
+        client = session.client(service_name="ssm")
+    except NoRegionError:
+        print("Warning, no default region set, defaulting to us-east-1. Please set a default region in either your aws config file or via environment variable AWS_DEFAULT_REGION")
+        client = session.client(service_name="ssm", region_name=DEFAULT_REGION)
+
+    try:
+        resp = client.get_parameter(Name=name, WithDecryption=decrypt)
+    except Exception as e:
+        raise e
+    else:
+        return resp.get("Parameter", {}).get("Value")
+
